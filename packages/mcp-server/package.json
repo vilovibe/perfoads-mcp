@@ -1,0 +1,75 @@
+{
+  "name": "@perfoads/mcp-server",
+  "version": "0.2.0-alpha.0",
+  "description": "PerfoAds MCP server (stdio), works with the Google Ads API: account, read, check and change tools with human approval.",
+  "keywords": [
+    "google-ads",
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "ppc"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vilovibe/perfoads-mcp.git",
+    "directory": "packages/mcp-server"
+  },
+  "homepage": "https://github.com/vilovibe/perfoads-mcp/tree/main/packages/mcp-server#readme",
+  "bugs": {
+    "url": "https://github.com/vilovibe/perfoads-mcp/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "exports": {
+    ".": {
+      "@perfoads/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./testing": {
+      "@perfoads/source": "./src/testing/fakes.ts"
+    },
+    "./testing/changes": {
+      "@perfoads/source": "./src/testing/changeRig.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "package.json",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.4.0",
+    "@perfoads/ads-client": "workspace:*",
+    "@perfoads/changes": "workspace:*",
+    "@perfoads/checks": "workspace:*",
+    "@perfoads/policy": "workspace:*",
+    "@perfoads/reads": "workspace:*",
+    "@perfoads/snapshot": "workspace:*",
+    "@perfoads/store": "workspace:*",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.4.0"
+  }
+}

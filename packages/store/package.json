@@ -1,0 +1,55 @@
+{
+  "name": "@perfoads/store",
+  "version": "0.2.0-alpha.0",
+  "description": "Local SQLite store with encrypted credentials for the PerfoAds MCP server (works with Google Ads).",
+  "keywords": [
+    "sqlite",
+    "encrypted-credentials",
+    "google-ads"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vilovibe/perfoads-mcp.git",
+    "directory": "packages/store"
+  },
+  "homepage": "https://github.com/vilovibe/perfoads-mcp/tree/main/packages/store#readme",
+  "bugs": {
+    "url": "https://github.com/vilovibe/perfoads-mcp/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "exports": {
+    ".": {
+      "@perfoads/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./testing": {
+      "@perfoads/source": "./src/testing/lock.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  }
+}

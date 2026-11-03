@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+.env
+.env*
+*.sqlite
+*.sqlite3
+*.db
+snapshots/
+/credentials*
+*credentials*.json
+*.credentials.json
+client_secret*.json
+*.pem
+*.key
+.DS_Store

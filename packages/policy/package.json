@@ -1,0 +1,60 @@
+{
+  "name": "@perfoads/policy",
+  "version": "0.2.0-alpha.0",
+  "description": "Change policy (policy.yaml) for the PerfoAds MCP server (works with Google Ads): which accounts may be written, spend limits, tiers, ops reserve and a kill switch.",
+  "keywords": [
+    "google-ads",
+    "policy",
+    "spend-limits",
+    "guardrails"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vilovibe/perfoads-mcp.git",
+    "directory": "packages/policy"
+  },
+  "homepage": "https://github.com/vilovibe/perfoads-mcp/tree/main/packages/policy#readme",
+  "bugs": {
+    "url": "https://github.com/vilovibe/perfoads-mcp/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "exports": {
+    ".": {
+      "@perfoads/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@perfoads/ads-client": "workspace:*",
+    "@perfoads/changes": "workspace:*",
+    "@perfoads/store": "workspace:*",
+    "yaml": "2.9.1",
+    "zod": "4.6.7"
+  }
+}

@@ -1,0 +1,151 @@
+name: release
+
+# Publishes to npm. Never runs on a push (branches or tags): only when started by hand
+# (Actions > release > Run workflow). A real publish must be started from a v<version> tag
+# that matches packages/cli; a dry run may start from any ref.
+#
+# Two jobs:
+# - build: no OIDC token, may use the pnpm cache; installs the locked tree, runs every
+#   check and test, packs the packages, uploads the tarballs.
+# - publish: the only job with id-token: write; no cache; installs the locked tree with
+#   --ignore-scripts (no dependency code runs here); publishes the tarballs from build,
+#   with provenance, through npm trusted publishing (OIDC).
+#
+# Trusted publishing: on npmjs.com, for each package (perfoads-mcp and every
+# @perfoads/*), Settings > Trusted publisher > GitHub Actions, this repository, workflow
+# file release.yml. No npm token is stored then.
+# Fallback only if trusted publishing can't be set up yet: create a granular automation
+# token, store it as the NPM_TOKEN secret, and add `NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}`
+# to the publish step's env. Remove the secret once trusted publishing works.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (pack and check, publish nothing)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Refuse to publish from a private repository
+        if: github.event.repository.private == true && !inputs.dry_run
+        run: |
+          echo "This repository is private: publishing to npm is blocked. Make the repository public first (a separate decision), or start the workflow with dry_run." >&2
+          exit 1
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: bash scripts/hygiene-check.sh
+      # Generated docs and packages/cli/npm-shrinkwrap.json match the code and the lockfile.
+      - run: pnpm docs:check
+
+      - name: A real publish starts from the tag of the CLI version
+        if: ${{ !inputs.dry_run }}
+        run: |
+          version="$(node -p "require('./packages/cli/package.json').version")"
+          if [ "${GITHUB_REF_TYPE}" != "tag" ] || [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+            echo "Start the workflow from tag v${version} (now: ${GITHUB_REF_TYPE} ${GITHUB_REF_NAME})." >&2
+            exit 1
+          fi
+
+      - name: Pack (pnpm turns workspace:* into exact versions)
+        run: |
+          set -euo pipefail
+          out="${RUNNER_TEMP}/packs"
+          mkdir -p "$out"
+          for pkg in ads-client store reads changes policy checks snapshot mcp-server cli; do
+            (cd "packages/${pkg}" && pnpm pack --pack-destination "$out" >/dev/null)
+          done
+          # Published manifests never point at TypeScript sources.
+          for t in "$out"/*.tgz; do
+            if tar -xOzf "$t" package/package.json | grep -q '@perfoads/source'; then
+              echo "$t: package.json still has the @perfoads/source condition." >&2
+              exit 1
+            fi
+          done
+          tar -tzf "$out"/perfoads-mcp-*.tgz | grep -qx 'package/npm-shrinkwrap.json'
+          ls -l "$out"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: packs
+          path: ${{ runner.temp }}/packs/*.tgz
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing (OIDC) and provenance
+    steps:
+      - name: Refuse to publish from a private repository
+        if: github.event.repository.private == true && !inputs.dry_run
+        run: |
+          echo "This repository is private: publishing to npm is blocked." >&2
+          exit 1
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      # No cache in the job that holds the OIDC token.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      # Trusted publishing needs npm 11.5.1 or later; Node 22 ships npm 10.
+      - run: npm install --global --ignore-scripts npm@11.21.1
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: packs
+          path: ${{ runner.temp }}/packs
+
+      - name: Publish (dependencies first)
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          out="${RUNNER_TEMP}/packs"
+          for pkg in ads-client store reads changes policy checks snapshot mcp-server cli; do
+            dir="packages/${pkg}"
+            name="$(node -p "require('./${dir}/package.json').name")"
+            version="$(node -p "require('./${dir}/package.json').version")"
+            # Re-runs are safe: a version already on npm is skipped, never re-published.
+            if npm view "${name}@${version}" version >/dev/null 2>&1; then
+              echo "${name}@${version} is already on npm, skipping."
+              continue
+            fi
+            tag="latest"
+            case "$version" in *-*) tag="$(echo "${version#*-}" | cut -d. -f1)" ;; esac
+            tarball="${out}/$(echo "${name}" | sed -e 's/^@//' -e 's/\//-/')-${version}.tgz"
+            if [ ! -f "$tarball" ]; then
+              echo "Missing ${tarball} from the build job." >&2
+              exit 1
+            fi
+            if [ "${DRY_RUN}" = "true" ]; then
+              npm publish "$tarball" --provenance --access public --tag "$tag" --dry-run
+            else
+              npm publish "$tarball" --provenance --access public --tag "$tag"
+            fi
+          done

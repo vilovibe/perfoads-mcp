@@ -1,0 +1,159 @@
+{
+  "name": "perfoads-mcp",
+  "version": "0.2.0-alpha.0",
+  "lockfileVersion": 3,
+  "requires": true,
+  "packages": {
+    "": {
+      "name": "perfoads-mcp",
+      "version": "0.2.0-alpha.0",
+      "license": "Apache-2.0",
+      "dependencies": {
+        "@perfoads/ads-client": "0.2.0-alpha.0",
+        "@perfoads/changes": "0.2.0-alpha.0",
+        "@perfoads/mcp-server": "0.2.0-alpha.0",
+        "@perfoads/policy": "0.2.0-alpha.0",
+        "@perfoads/store": "0.2.0-alpha.0"
+      },
+      "bin": {
+        "perfoads-mcp": "./bin/perfoads-mcp.js"
+      },
+      "engines": {
+        "node": ">=22.13"
+      }
+    },
+    "node_modules/@modelcontextprotocol/core": {
+      "version": "2.4.0",
+      "resolved": "https://registry.npmjs.org/@modelcontextprotocol/core/-/core-2.4.0.tgz",
+      "integrity": "sha512-z8QBKqdfXLPzkLQuG4xp8hrVEMm1PZ1IgxMN2sMbJiFiAKOWXnAzogXn2W4aqIBlP1ea6U5yiqVquvUNM1Cj6Q==",
+      "dependencies": {
+        "zod": "4.6.7"
+      },
+      "engines": {
+        "node": ">=20"
+      }
+    },
+    "node_modules/@modelcontextprotocol/server": {
+      "version": "2.4.0",
+      "resolved": "https://registry.npmjs.org/@modelcontextprotocol/server/-/server-2.4.0.tgz",
+      "integrity": "sha512-rgR9yxSaAJ+bcsi/XroT/S2AfPiIWloXAnrdfYSCms9ivVju0ishu/wW0J21Ho6+ZOR1r7RyeRbjiRuF87ix5Q==",
+      "dependencies": {
+        "@modelcontextprotocol/core": "2.4.0",
+        "zod": "4.6.7"
+      },
+      "engines": {
+        "node": ">=20"
+      }
+    },
+    "node_modules/@perfoads/ads-client": {
+      "version": "0.2.0-alpha.0",
+      "resolved": "https://registry.npmjs.org/@perfoads/ads-client/-/ads-client-0.2.0-alpha.0.tgz",
+      "license": "Apache-2.0",
+      "engines": {
+        "node": ">=22.13"
+      }
+    },
+    "node_modules/@perfoads/changes": {
+      "version": "0.2.0-alpha.0",
+      "resolved": "https://registry.npmjs.org/@perfoads/changes/-/changes-0.2.0-alpha.0.tgz",
+      "license": "Apache-2.0",
+      "dependencies": {
+        "@perfoads/ads-client": "0.2.0-alpha.0",
+        "@perfoads/store": "0.2.0-alpha.0",
+        "zod": "4.6.7"
+      },
+      "engines": {
+        "node": ">=22.13"
+      }
+    },
+    "node_modules/@perfoads/checks": {
+      "version": "0.2.0-alpha.0",
+      "resolved": "https://registry.npmjs.org/@perfoads/checks/-/checks-0.2.0-alpha.0.tgz",
+      "license": "Apache-2.0",
+      "engines": {
+        "node": ">=22.13"
+      }
+    },
+    "node_modules/@perfoads/mcp-server": {
+      "version": "0.2.0-alpha.0",
+      "resolved": "https://registry.npmjs.org/@perfoads/mcp-server/-/mcp-server-0.2.0-alpha.0.tgz",
+      "license": "Apache-2.0",
+      "dependencies": {
+        "@modelcontextprotocol/server": "2.4.0",
+        "@perfoads/ads-client": "0.2.0-alpha.0",
+        "@perfoads/changes": "0.2.0-alpha.0",
+        "@perfoads/checks": "0.2.0-alpha.0",
+        "@perfoads/policy": "0.2.0-alpha.0",
+        "@perfoads/reads": "0.2.0-alpha.0",
+        "@perfoads/snapshot": "0.2.0-alpha.0",
+        "@perfoads/store": "0.2.0-alpha.0",
+        "zod": "4.6.7"
+      },
+      "engines": {
+        "node": ">=22.13"
+      }
+    },
+    "node_modules/@perfoads/policy": {
+      "version": "0.2.0-alpha.0",
+      "resolved": "https://registry.npmjs.org/@perfoads/policy/-/policy-0.2.0-alpha.0.tgz",
+      "license": "Apache-2.0",
+      "dependencies": {
+        "@perfoads/ads-client": "0.2.0-alpha.0",
+        "@perfoads/changes": "0.2.0-alpha.0",
+        "@perfoads/store": "0.2.0-alpha.0",
+        "yaml": "2.9.1",
+        "zod": "4.6.7"
+      },
+      "engines": {
+        "node": ">=22.13"
+      }
+    },
+    "node_modules/@perfoads/reads": {
+      "version": "0.2.0-alpha.0",
+      "resolved": "https://registry.npmjs.org/@perfoads/reads/-/reads-0.2.0-alpha.0.tgz",
+      "license": "Apache-2.0",
+      "dependencies": {
+        "@perfoads/ads-client": "0.2.0-alpha.0",
+        "zod": "4.6.7"
+      },
+      "engines": {
+        "node": ">=22.13"
+      }
+    },
+    "node_modules/@perfoads/snapshot": {
+      "version": "0.2.0-alpha.0",
+      "resolved": "https://registry.npmjs.org/@perfoads/snapshot/-/snapshot-0.2.0-alpha.0.tgz",
+      "license": "Apache-2.0",
+      "dependencies": {
+        "@perfoads/checks": "0.2.0-alpha.0",
+        "@perfoads/reads": "0.2.0-alpha.0",
+        "zod": "4.6.7"
+      },
+      "engines": {
+        "node": ">=22.13"
+      }
+    },
+    "node_modules/@perfoads/store": {
+      "version": "0.2.0-alpha.0",
+      "resolved": "https://registry.npmjs.org/@perfoads/store/-/store-0.2.0-alpha.0.tgz",
+      "license": "Apache-2.0",
+      "engines": {
+        "node": ">=22.13"
+      }
+    },
+    "node_modules/yaml": {
+      "version": "2.9.1",
+      "resolved": "https://registry.npmjs.org/yaml/-/yaml-2.9.1.tgz",
+      "integrity": "sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==",
+      "engines": {
+        "node": ">= 14.6"
+      },
+      "hasBin": true
+    },
+    "node_modules/zod": {
+      "version": "4.6.7",
+      "resolved": "https://registry.npmjs.org/zod/-/zod-4.6.7.tgz",
+      "integrity": "sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg=="
+    }
+  }
+}

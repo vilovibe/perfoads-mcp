@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+bash scripts/hygiene-check.sh --staged
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --redact
+else
+  echo "note: gitleaks not installed, skipping (CI runs it)"
+fi

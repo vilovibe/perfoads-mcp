@@ -1,0 +1,47 @@
+# PerfoAds MCP - example change policy (schema version 1).
+# Copy to the settings folder as policy.yaml (~/.config/perfoads-mcp/policy.yaml,
+# %APPDATA%\perfoads-mcp\policy.yaml on Windows). The server never reads a copy in a
+# project folder. Check it with: npx perfoads-mcp@<version> policy check
+# Every key: docs/POLICY.md
+
+version: 1
+
+accounts:
+  # Accounts the AI may read. Quote account ids.
+  allow: ["123-456-7890"]
+  # Accounts that may be changed. Empty = read-only everywhere.
+  write: []
+
+# --- To allow changes, start on a Google Ads TEST account ----------------------------
+# Replace the accounts block above with this one (and keep the limits small):
+#
+# accounts:
+#   allow: ["123-456-7890"]
+#   write: ["123-456-7890"]
+#
+# limits:
+#   max_budget_change_pct: 20                     # biggest budget step, in percent
+#   max_budget_change_abs: { "123-456-7890": 25 } # biggest budget step, in money
+#   max_new_daily_spend: { "123-456-7890": 50 }   # extra daily spend over any 24 hours
+#   max_target_change_pct: 20                     # target CPA / ROAS step, in percent
+#   writes_per_day: 20
+#   writes_per_minute: 5
+#
+# brand_terms: { "123-456-7890": ["Your Brand"] } # never added as negative keywords
+#
+# tiers:
+#   "remove_*": blocked                           # confirm (default) | blocked | auto
+#
+# Every change still needs your approval on the local approval page. If your AI app has
+# a shell (Claude Code, Cursor) or can control your browser, use the hardened setup:
+# docs/HARDENED-SETUP.md
+
+defaults:
+  new_entities_paused: true # new keywords start paused
+  broad_match_requires_smart_bidding: true
+
+ops_budget:
+  warn_at_pct: 80
+  reserve_for_writes_pct: 20 # reads stop before this last share of today's operations
+
+kill_switch: false # true = every change is refused, undo too

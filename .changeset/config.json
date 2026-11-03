@@ -1,0 +1,27 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.1.1/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [
+    [
+      "perfoads-mcp",
+      "@perfoads/mcp-server",
+      "@perfoads/snapshot",
+      "@perfoads/checks",
+      "@perfoads/reads",
+      "@perfoads/store",
+      "@perfoads/ads-client",
+      "@perfoads/changes",
+      "@perfoads/policy"
+    ]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "privatePackages": {
+    "version": false,
+    "tag": false
+  },
+  "ignore": []
+}

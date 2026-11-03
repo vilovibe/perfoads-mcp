@@ -1,0 +1,75 @@
+{
+  "name": "perfoads-mcp",
+  "version": "0.2.0-alpha.0",
+  "mcpName": "com.perfoads/mcp",
+  "description": "PerfoAds MCP: a self-hosted MCP server that works with Google Ads. Reads accounts, runs 100+ account checks, and changes things only with human approval and policy limits. Not a Google product.",
+  "keywords": [
+    "google-ads",
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "ppc",
+    "advertising",
+    "audit",
+    "claude",
+    "cursor",
+    "self-hosted"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vilovibe/perfoads-mcp.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/vilovibe/perfoads-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/vilovibe/perfoads-mcp/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "exports": {
+    ".": {
+      "@perfoads/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "perfoads-mcp": "./bin/perfoads-mcp.js"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "npm-shrinkwrap.json",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "perfoads": {
+    "published": true
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@perfoads/ads-client": "workspace:*",
+    "@perfoads/changes": "workspace:*",
+    "@perfoads/mcp-server": "workspace:*",
+    "@perfoads/policy": "workspace:*",
+    "@perfoads/store": "workspace:*"
+  }
+}

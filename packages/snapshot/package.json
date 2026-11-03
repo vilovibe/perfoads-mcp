@@ -1,0 +1,63 @@
+{
+  "name": "@perfoads/snapshot",
+  "version": "0.2.0-alpha.0",
+  "description": "Versioned AccountSnapshot of one Google Ads account, and its adapter to the PerfoAds check engine.",
+  "keywords": [
+    "google-ads",
+    "snapshot",
+    "audit"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vilovibe/perfoads-mcp.git",
+    "directory": "packages/snapshot"
+  },
+  "homepage": "https://github.com/vilovibe/perfoads-mcp/tree/main/packages/snapshot#readme",
+  "bugs": {
+    "url": "https://github.com/vilovibe/perfoads-mcp/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "exports": {
+    ".": {
+      "@perfoads/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./testing": {
+      "@perfoads/source": "./src/testing/fixtures.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@perfoads/checks": "workspace:*",
+    "@perfoads/reads": "workspace:*",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@perfoads/ads-client": "workspace:*"
+  }
+}

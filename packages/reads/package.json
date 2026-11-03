@@ -1,0 +1,56 @@
+{
+  "name": "@perfoads/reads",
+  "version": "0.2.0-alpha.0",
+  "description": "Typed Google Ads readers (campaigns, keywords, search terms, budgets, negatives, ads, audiences, conversions, change history, ...) for the PerfoAds MCP server.",
+  "keywords": [
+    "google-ads",
+    "gaql",
+    "reporting"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vilovibe/perfoads-mcp.git",
+    "directory": "packages/reads"
+  },
+  "homepage": "https://github.com/vilovibe/perfoads-mcp/tree/main/packages/reads#readme",
+  "bugs": {
+    "url": "https://github.com/vilovibe/perfoads-mcp/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "exports": {
+    ".": {
+      "@perfoads/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@perfoads/ads-client": "workspace:*",
+    "zod": "4.6.7"
+  }
+}

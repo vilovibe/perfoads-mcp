@@ -1,0 +1,55 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: [22, 24, 26]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      # docs/TOOLS.md and docs/CHECKS.md are generated from the built server: never stale.
+      - if: matrix.os == 'ubuntu-latest' && matrix.node == 22
+        run: pnpm docs:check
+
+  # Hygiene needs bash + perl and the full history, so it runs once, on Linux.
+  hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+      - name: Private hygiene list (from secret, skipped when not set)
+        env:
+          HYGIENE_PRIVATE_LIST_CONTENT: ${{ secrets.HYGIENE_PRIVATE_LIST_CONTENT }}
+        run: |
+          if [ -n "$HYGIENE_PRIVATE_LIST_CONTENT" ]; then
+            f="$RUNNER_TEMP/hygiene-private.txt"
+            printf '%s\n' "$HYGIENE_PRIVATE_LIST_CONTENT" > "$f"
+            echo "HYGIENE_PRIVATE_LIST=$f" >> "$GITHUB_ENV"
+          else
+            echo "No HYGIENE_PRIVATE_LIST_CONTENT secret: generic hygiene checks only."
+          fi
+      - run: bash scripts/hygiene-check.sh
+      - run: bash scripts/hygiene-selftest.sh
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

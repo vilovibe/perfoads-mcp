@@ -1,0 +1,111 @@
+{
+  "source": "demo shop (shaped like a read-only Google Ads product read, shopping_performance_view, 90 days): names, ids and wording replaced, spend scaled and rounded, shapes kept",
+  "note": "colourFromTitle = the colour word in the product title (the Merchant Center colour attribute was not read here)",
+  "splitRead": {
+    "limitPerQuery": 1000,
+    "reads": 3,
+    "truncated": false,
+    "rows": 1200,
+    "pmaxRows": 1000,
+    "shoppingRows": 200,
+    "campaigns": {
+      "PERFORMANCE_MAX:1002": 750,
+      "PERFORMANCE_MAX:1001": 240,
+      "SHOPPING:1003": 200,
+      "PERFORMANCE_MAX:1004": 10
+    },
+    "oldCappedPmaxRows": 1000
+  },
+  "miraRows": [
+    {
+      "campaignId": "1001",
+      "channel": "PERFORMANCE_MAX",
+      "itemId": "shopify_us_5000000000001_1001",
+      "title": "Women's Sample Demo Jacket Mira Basic Test Plain Simple Neutral Straight-Cut Snap-On Light Camel Demo Brand M",
+      "cost": 124.0,
+      "conversions": 0.0,
+      "colourFromTitle": "Light Camel"
+    },
+    {
+      "campaignId": "1001",
+      "channel": "PERFORMANCE_MAX",
+      "itemId": "shopify_us_5000000000001_1002",
+      "title": "Women's Sample Demo Jacket Mira Basic Test Plain Simple Neutral Straight-Cut Snap-On Light Blue Demo Brand M",
+      "cost": 21.0,
+      "conversions": 1.0,
+      "colourFromTitle": "Light Blue"
+    },
+    {
+      "campaignId": "1001",
+      "channel": "PERFORMANCE_MAX",
+      "itemId": "shopify_us_5000000000001_1003",
+      "title": "Women's Sample Demo Jacket Mira Basic Test Plain Simple Neutral Straight-Cut Snap-On Light Camel Demo Brand L",
+      "cost": 9.0,
+      "conversions": 0.0,
+      "colourFromTitle": "Light Camel"
+    },
+    {
+      "campaignId": "1001",
+      "channel": "PERFORMANCE_MAX",
+      "itemId": "shopify_us_5000000000001_1004",
+      "title": "Women's Sample Demo Jacket Mira Basic Test Plain Simple Neutral Straight-Cut Snap-On Light Camel Demo Brand XS",
+      "cost": 30.0,
+      "conversions": 0.0,
+      "colourFromTitle": "Light Camel"
+    },
+    {
+      "campaignId": "1001",
+      "channel": "PERFORMANCE_MAX",
+      "itemId": "shopify_us_5000000000001_1005",
+      "title": "Women's Sample Demo Jacket Mira Basic Test Plain Simple Neutral Straight-Cut Snap-On Light Camel Demo Brand S",
+      "cost": 146.0,
+      "conversions": 0.0,
+      "colourFromTitle": "Light Camel"
+    },
+    {
+      "campaignId": "1001",
+      "channel": "PERFORMANCE_MAX",
+      "itemId": "shopify_us_5000000000001_1006",
+      "title": "Women's Sample Demo Jacket Mira Basic Test Plain Simple Neutral Straight-Cut Snap-On Light Blue Demo Brand S",
+      "cost": 17.0,
+      "conversions": 1.0,
+      "colourFromTitle": "Light Blue"
+    },
+    {
+      "campaignId": "1001",
+      "channel": "PERFORMANCE_MAX",
+      "itemId": "shopify_us_5000000000001_1007",
+      "title": "Women's Sample Demo Jacket Mira Basic Test Plain Simple Neutral Straight-Cut Snap-On Light Blue Demo Brand XL",
+      "cost": 8.0,
+      "conversions": 0.0,
+      "colourFromTitle": "Light Blue"
+    },
+    {
+      "campaignId": "1001",
+      "channel": "PERFORMANCE_MAX",
+      "itemId": "shopify_us_5000000000001_1008",
+      "title": "Women's Sample Demo Jacket Mira Basic Test Plain Simple Neutral Straight-Cut Snap-On Light Blue Demo Brand XS",
+      "cost": 29.0,
+      "conversions": 2.0,
+      "colourFromTitle": "Light Blue"
+    },
+    {
+      "campaignId": "1001",
+      "channel": "PERFORMANCE_MAX",
+      "itemId": "shopify_us_5000000000001_1009",
+      "title": "Women's Sample Demo Jacket Mira Basic Test Plain Simple Neutral Straight-Cut Snap-On Light Camel Demo Brand XL",
+      "cost": 68.0,
+      "conversions": 0.0,
+      "colourFromTitle": "Light Camel"
+    },
+    {
+      "campaignId": "1001",
+      "channel": "PERFORMANCE_MAX",
+      "itemId": "shopify_us_5000000000001_1010",
+      "title": "Women's Sample Demo Jacket Mira Basic Test Plain Simple Neutral Straight-Cut Snap-On Light Blue Demo Brand L",
+      "cost": 71.0,
+      "conversions": 1.0,
+      "colourFromTitle": "Light Blue"
+    }
+  ]
+}

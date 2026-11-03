@@ -1,0 +1,34 @@
+{
+  "name": "perfoads-mcp-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "lint": "eslint . && prettier --check .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r build && vitest run --passWithNoTests",
+    "hygiene": "bash scripts/hygiene-check.sh",
+    "hygiene:selftest": "bash scripts/hygiene-selftest.sh",
+    "changeset": "changeset",
+    "docs": "node scripts/gen-tools-doc.mjs && node scripts/gen-checks-doc.mjs",
+    "docs:check": "node scripts/gen-tools-doc.mjs --check && node scripts/gen-checks-doc.mjs --check && node scripts/gen-shrinkwrap.mjs --check && node scripts/check-listing-versions.mjs",
+    "mcpb": "node scripts/build-mcpb.mjs",
+    "shrinkwrap": "node scripts/gen-shrinkwrap.mjs"
+  },
+  "devDependencies": {
+    "@anthropic-ai/mcpb": "2.1.2",
+    "@changesets/cli": "^3.0.3",
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.0",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.18.0",
+    "vitest": "^2.1.0"
+  }
+}

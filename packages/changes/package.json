@@ -1,0 +1,62 @@
+{
+  "name": "@perfoads/changes",
+  "version": "0.2.0-alpha.0",
+  "description": "Change engine for the PerfoAds MCP server (works with Google Ads): propose, check with Google, approve, apply once, read back, log and undo.",
+  "keywords": [
+    "google-ads",
+    "change-engine",
+    "approval",
+    "undo",
+    "audit-log"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vilovibe/perfoads-mcp.git",
+    "directory": "packages/changes"
+  },
+  "homepage": "https://github.com/vilovibe/perfoads-mcp/tree/main/packages/changes#readme",
+  "bugs": {
+    "url": "https://github.com/vilovibe/perfoads-mcp/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "exports": {
+    ".": {
+      "@perfoads/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./testing": {
+      "@perfoads/source": "./src/testing/index.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@perfoads/ads-client": "workspace:*",
+    "@perfoads/store": "workspace:*",
+    "zod": "4.6.7"
+  }
+}

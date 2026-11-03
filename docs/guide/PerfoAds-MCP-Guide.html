@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PerfoAds MCP Guide</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #14181f;
+        --soft: #4a5260;
+        --line: #e3e6eb;
+        --bg: #ffffff;
+        --tint: #f4f7f5;
+        --accent: #1f8a4c;
+        --warn: #fff7e6;
+        --warnline: #f0c46b;
+      }
+      @page {
+        size: A4;
+        margin: 16mm 16mm 18mm;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          400 11pt/1.55 Inter,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      .wrap {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 24px 16px;
+      }
+      h1 {
+        font-size: 28pt;
+        line-height: 1.15;
+        margin: 0 0 8px;
+        letter-spacing: -0.02em;
+      }
+      h2 {
+        font-size: 16pt;
+        margin: 0 0 10px;
+        padding-top: 4px;
+        letter-spacing: -0.01em;
+      }
+      h3 {
+        font-size: 11.5pt;
+        margin: 16px 0 4px;
+      }
+      p {
+        margin: 0 0 8px;
+      }
+      ul,
+      ol {
+        margin: 0 0 10px;
+        padding-left: 20px;
+      }
+      li {
+        margin: 0 0 4px;
+      }
+      code,
+      pre {
+        font-family: ui-monospace, Menlo, Consolas, monospace;
+        font-size: 9.5pt;
+      }
+      code {
+        background: var(--tint);
+        padding: 1px 5px;
+        border-radius: 3px;
+      }
+      pre {
+        background: var(--tint);
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        border-radius: 4px;
+        white-space: pre-wrap;
+        word-break: break-all;
+        margin: 6px 0 12px;
+      }
+      .cover {
+        min-height: 250mm;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .cover img {
+        width: 72px;
+        height: 72px;
+        margin-bottom: 20px;
+      }
+      .lead {
+        font-size: 13pt;
+        color: var(--soft);
+        max-width: 560px;
+      }
+      .meta {
+        margin-top: 28px;
+        color: var(--soft);
+        font-size: 10pt;
+      }
+      .tag {
+        align-self: flex-start;
+        display: inline-block;
+        font-size: 9pt;
+        font-weight: 600;
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        padding: 2px 8px;
+        border-radius: 3px;
+        margin-bottom: 16px;
+      }
+      section {
+        page-break-before: always;
+      }
+      .box {
+        border: 1px solid var(--line);
+        background: var(--tint);
+        padding: 12px 14px;
+        border-radius: 4px;
+        margin: 10px 0 14px;
+      }
+      .box.warn {
+        background: var(--warn);
+        border-color: var(--warnline);
+      }
+      .box p:last-child,
+      .box ul:last-child {
+        margin-bottom: 0;
+      }
+      .ask {
+        border-left: 3px solid var(--accent);
+        padding: 2px 0 2px 12px;
+        margin: 0 0 6px;
+      }
+      .steps {
+        counter-reset: s;
+        list-style: none;
+        padding-left: 0;
+      }
+      .steps > li {
+        counter-increment: s;
+        position: relative;
+        padding-left: 34px;
+        margin-bottom: 12px;
+      }
+      .steps > li::before {
+        content: counter(s);
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 600;
+        font-size: 10pt;
+        text-align: center;
+        line-height: 22px;
+      }
+      .toc li {
+        margin-bottom: 6px;
+      }
+      .small {
+        font-size: 9.5pt;
+        color: var(--soft);
+      }
+      .two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 600px) {
+        .two {
+          grid-template-columns: 1fr;
+        }
+        h1 {
+          font-size: 22pt;
+        }
+      }
+      @media screen {
+        section {
+          border-top: 1px solid var(--line);
+          padding-top: 28px;
+          margin-top: 28px;
+        }
+        .cover {
+          min-height: auto;
+          padding: 40px 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="cover">
+        <img src="perfoads-mcp-icon-512.png" alt="" />
+        <span class="tag">Private beta</span>
+        <h1>PerfoAds MCP<br />Setup and user guide</h1>
+        <p class="lead">
+          Connect your AI assistant to your Google Ads account. Ask questions in plain English, run
+          a full account check, and make changes only after you approve them.
+        </p>
+        <div class="meta">
+          Version 0.1.0 alpha &middot; 1 November 2026<br />
+          Works with Claude Desktop, Claude Code, Cursor, ChatGPT desktop and Codex<br />
+          perfoads.com &middot; contact@perfoads.com
+        </div>
+      </div>
+
+      <section>
+        <h2>What is inside</h2>
+        <ol class="toc">
+          <li>What PerfoAds MCP does</li>
+          <li>What you need before you start</li>
+          <li>Set up Google (about 15 minutes)</li>
+          <li>Install and connect your AI app</li>
+          <li>What to ask</li>
+          <li>Run a full account check</li>
+          <li>Make changes safely</li>
+          <li>Undo, history and the stop switch</li>
+          <li>When something goes wrong</li>
+          <li>Your data and privacy</li>
+        </ol>
+
+        <h2 style="margin-top: 24px">1. What PerfoAds MCP does</h2>
+        <p>
+          It is a small program that runs on your own computer. It lets your AI assistant work with
+          your Google Ads account.
+        </p>
+        <ul>
+          <li>
+            <b>Look:</b> ask about campaigns, keywords, search terms, budgets, ads and conversions.
+            Nothing changes.
+          </li>
+          <li>
+            <b>Check:</b> 162 fixed checks look through the whole account and list what is wrong,
+            with the numbers behind each problem.
+          </li>
+          <li>
+            <b>Change:</b> budgets, pausing, bid targets, negative keywords, keywords, ad text,
+            sitelinks, callouts, audience exclusions, and new Search campaigns.
+          </li>
+        </ul>
+        <div class="box">
+          <p>
+            <b>The safety rule.</b> No change goes live until you approve it on a page outside the
+            chat, with a 6-character code. The AI saying "yes" approves nothing. Changes are
+            switched off until you turn them on for an account.
+          </p>
+        </div>
+        <p>
+          Your data goes only between your computer and Google. Nothing is sent to PerfoAds. There
+          is no tracking.
+        </p>
+        <p class="small">
+          The checks say what is wrong. They do not say how to fix it. For fix plans, PerfoAds
+          offers a free 1-hour call with Pawel: perfoads.com
+        </p>
+        <p class="small">
+          PerfoAds MCP works with Google Ads. It is not made or supported by Google.
+        </p>
+      </section>
+
+      <section>
+        <h2>2. What you need before you start</h2>
+        <ul>
+          <li>A Mac, Windows or Linux computer.</li>
+          <li>
+            <b>Node.js version 22.13 or newer.</b> Get it at nodejs.org. To check, open Terminal and
+            type <code>node --version</code>.
+          </li>
+          <li>A Google account that can open your Google Ads account.</li>
+          <li>Your own <b>Google Cloud project</b>. It is free. Section 3 shows how.</li>
+          <li>One AI app: Claude Desktop, Claude Code, Cursor, ChatGPT desktop or Codex.</li>
+        </ul>
+        <div class="box warn">
+          <p>
+            <b>Beta note.</b> PerfoAds MCP is not in the public app stores or on npm yet. During the
+            beta you install it from the PerfoAds code folder you were given access to. Section 4
+            covers this.
+          </p>
+        </div>
+
+        <h2 style="margin-top: 22px">3. Set up Google (about 15 minutes)</h2>
+        <p>You do this once. It gives the program its own key to your Google Ads, owned by you.</p>
+        <ol class="steps">
+          <li>
+            <b>Create a project.</b> Go to console.cloud.google.com, sign in, and create a new
+            project. Call it something like "My PerfoAds MCP".
+          </li>
+          <li>
+            <b>Turn on the Google Ads API.</b> Menu: APIs &amp; Services &gt; Library. Search
+            "Google Ads API". Click <b>Enable</b>.
+          </li>
+          <li>
+            <b>Set up the sign-in screen.</b> Menu: Google Auth Platform (OAuth consent screen).
+            Pick <b>External</b>. Give the app a name and add your email. Under Audience, add your
+            own Google account as a test user.
+          </li>
+          <li>
+            <b>Create the app key.</b> Google Auth Platform &gt; Clients &gt; Create client. Type:
+            <b>Desktop app</b>. Copy the <b>client ID</b> and <b>client secret</b>. Keep them
+            private.
+          </li>
+          <li>
+            <b>Ask for Explorer access.</b> On the Google Ads API page of your project, apply for
+            <b>Explorer</b> access. Until Google approves it, only Google Ads test accounts work.
+            Ours was approved the same day.
+          </li>
+          <li>
+            <b>Stop the weekly sign-out (recommended).</b> While your app is in "Testing", Google
+            signs you out every 7 days. To avoid it: Google Auth Platform &gt; Audience &gt;
+            <b>Publish app</b>. Google may show an "unverified app" warning when you sign in. For an
+            app only you use, you can click past it.
+          </li>
+        </ol>
+        <div class="box">
+          <p>
+            <b>How much can it do per day?</b> Explorer access allows 2,880 Google Ads requests a
+            day on live accounts. Test accounts get 15,000. Keyword ideas need a higher access level
+            (Basic).
+          </p>
+          <p>
+            <b>The limit is yours alone.</b> It belongs to your own Google Cloud project, so other
+            users never use up your share.
+          </p>
+          <p>
+            <b>How far it goes.</b> Normal questions about one account use a few hundred requests a
+            day. A product-by-product review of a big shop over several months can use 2,000 or more
+            on its own. If you hit the limit often, ask for <b>Basic</b> (15,000 a day): finish
+            brand verification for your project first (Google Auth Platform, then Branding: app
+            name, logo, home page, privacy page), then on the Google Ads API Overview page click
+            <b>Apply for access</b> under Basic.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2>4. Install and connect your AI app</h2>
+        <h3>Step 1: Install</h3>
+        <p>Open Terminal and run these lines one by one:</p>
+        <pre>
+git clone https://github.com/vilovibe/perfoads-mcp.git
+cd perfoads-mcp
+pnpm install --frozen-lockfile &amp;&amp; pnpm build
+node packages/cli/bin/perfoads-mcp.js init</pre>
+        <p class="small">No <code>pnpm</code>? Run <code>npm install -g pnpm</code> first.</p>
+
+        <h3>Step 2: Let the setup guide you</h3>
+        <p>The last line starts the setup. It will:</p>
+        <ol>
+          <li>ask for your client ID and client secret from Section 3,</li>
+          <li>ask your access level (pick Explorer once Google approved it),</li>
+          <li>open Google's sign-in page in your browser,</li>
+          <li>save your sign-in, locked and encrypted, on your computer,</li>
+          <li>write a starter rules file that allows looking only, no changes,</li>
+          <li>test everything,</li>
+          <li>print the exact lines to paste into your AI app.</li>
+        </ol>
+
+        <h3>Step 3: Connect your AI app</h3>
+        <p>Paste the lines the setup printed:</p>
+        <ul>
+          <li>
+            <b>Claude Desktop:</b> Settings &gt; Developer &gt; Edit Config. Paste the block, save,
+            and restart Claude.
+          </li>
+          <li><b>Claude Code:</b> run the <code>claude mcp add ...</code> line it printed.</li>
+          <li><b>Cursor:</b> paste the block into <code>~/.cursor/mcp.json</code>.</li>
+          <li>
+            <b>ChatGPT desktop:</b> Settings &gt; MCP servers &gt; Add server, type STDIO, with the
+            command and file path the setup printed.
+          </li>
+          <li>
+            <b>Codex:</b> <code>codex mcp add perfoads-mcp -- </code> followed by the command it
+            printed. Set the tool time limit to 300 seconds, because a full check can take a few
+            minutes.
+          </li>
+        </ul>
+
+        <h3>Step 4: Test it</h3>
+        <div class="ask">"Check my PerfoAds setup."</div>
+        <div class="ask">"Which Google Ads accounts can you see?"</div>
+        <p style="margin-top: 8px">
+          The first one tests the sign-in, access and rules, and tells you what to fix. The second
+          lists every account you can reach, including those under manager accounts.
+        </p>
+      </section>
+
+      <section>
+        <h2>5. What to ask</h2>
+        <p>
+          You never call anything yourself. You talk to your AI app the way you would talk to a
+          colleague. <b>Always name the account</b> ("in the Acme account" or its 10-digit number)
+          if you have more than one.
+        </p>
+        <div class="two">
+          <div>
+            <h3>Overview</h3>
+            <div class="ask">"Give me an overview of the Acme account for the last 30 days."</div>
+            <div class="ask">
+              "Which campaigns spent the most last week, and what did they bring in?"
+            </div>
+            <h3>Search terms and keywords</h3>
+            <div class="ask">
+              "Show search terms from the last 14 days that cost money and never converted."
+            </div>
+            <div class="ask">"List keywords with a low Quality Score."</div>
+          </div>
+          <div>
+            <h3>Setup</h3>
+            <div class="ask">"What are the budgets and bid strategies of all live campaigns?"</div>
+            <div class="ask">"Which conversions are set up, and which count towards bidding?"</div>
+            <h3>History</h3>
+            <div class="ask">"What did anyone change in this account in the last 7 days?"</div>
+            <div class="ask">"Show the ads and assets of ad group Y."</div>
+          </div>
+        </div>
+        <p style="margin-top: 10px">
+          Answers come as a short summary first. Say "show more" for the next rows. Money is in the
+          account's own currency. If your question is not covered by the list above, ask anyway.
+        </p>
+
+        <h2 style="margin-top: 22px">6. Run a full account check</h2>
+        <div class="ask">"Run a full audit of the Acme account."</div>
+        <p style="margin-top: 8px">
+          The AI takes a copy of the account, runs all 162 checks on it, and writes a report grouped
+          by area: tracking, settings, budget and bidding, search and keywords, ads and landing
+          pages, Performance Max, Shopping, audiences and devices, Demand Gen, and trends.
+        </p>
+        <p>Each check ends in one of these:</p>
+        <ul>
+          <li><b>Problem found:</b> what is wrong, where, and the numbers that prove it.</li>
+          <li><b>Info:</b> worth knowing, not a problem.</li>
+          <li><b>Clean:</b> checked, nothing wrong.</li>
+          <li><b>Not run:</b> it could not check, with the reason. This never means "fine".</li>
+        </ul>
+        <p>
+          Good follow-ups: "Explain check X", "Show only the problems in campaign Z", "Show only the
+          urgent ones".
+        </p>
+      </section>
+
+      <section>
+        <h2>7. Make changes safely</h2>
+        <h3>Step 1: Switch changes on for one account</h3>
+        <p>
+          Changes are off at the start. Open the rules file <code>policy.yaml</code>. It is in
+          <code>~/.config/perfoads-mcp/</code> on Mac and Linux, or
+          <code>%APPDATA%\perfoads-mcp\</code> on Windows. Add the account under <code>write</code>:
+        </p>
+        <pre>
+version: 1
+accounts:
+  allow: ["123-456-7890"]
+  write: ["123-456-7890"]</pre>
+        <p>
+          The same file can set spend limits per account, how big a budget step may be, how many
+          changes per day, and brand words that may never be blocked. The AI cannot edit this file.
+          Tip: try your first changes on a Google Ads test account.
+        </p>
+
+        <h3>Step 2: Ask for the change in plain words</h3>
+        <div class="ask">"Lower the budget of campaign X to 40 a day."</div>
+        <div class="ask">"Pause campaign Y."</div>
+        <div class="ask">"Change the target ROAS of campaign Z to 400%."</div>
+        <div class="ask">
+          "Add 'free' and 'cheap' as phrase-match negative keywords to campaign X."
+        </div>
+        <div class="ask">
+          "Change headline 3 of the ad in ad group Y to 'Free returns for 60 days'."
+        </div>
+        <div class="ask">
+          "Add a sitelink 'Size guide' to campaign X, linking to yoursite.com/size-guide."
+        </div>
+
+        <h3>Step 3: What happens next</h3>
+        <ol class="steps">
+          <li>
+            <b>Google tests it first</b> without changing anything, and your rules are checked.
+          </li>
+          <li>
+            <b>A page opens in your browser.</b> It shows the account, the exact change, every
+            campaign it touches, and the AI's reason in a separate box marked "unverified".
+          </li>
+          <li>
+            <b>You approve</b> with the 6-character code on that page, or reject it. The link works
+            for 10 minutes.
+          </li>
+          <li>
+            <b>It is sent once.</b> If the account changed since you approved, nothing is sent and
+            you are told why.
+          </li>
+          <li>
+            <b>It is checked.</b> The program reads the account again to confirm the change landed.
+          </li>
+        </ol>
+
+        <h3>New Search campaigns</h3>
+        <div class="ask">
+          "Create a Search campaign 'Belts US' with 30 a day, Maximize conversions, United States,
+          English, one ad group 'Leather belts' with these keywords, and this ad: ..."
+        </div>
+        <p style="margin-top: 8px">
+          New campaigns are <b>always created paused</b>. Check it in Google Ads, then say "switch
+          on campaign 'Belts US'". That is a second change, with its own approval.
+        </p>
+      </section>
+
+      <section>
+        <h2>8. Undo, history and the stop switch</h2>
+        <div class="ask">"What did you change this week?"</div>
+        <div class="ask">"Undo the budget change on campaign X."</div>
+        <ul style="margin-top: 8px">
+          <li>An undo is a new change with its own approval.</li>
+          <li>Most changes can be undone for 30 days.</li>
+          <li>
+            A new campaign can be undone only while it has never run, and from 15 minutes after it
+            was made.
+          </li>
+          <li>
+            For sitelinks and callouts, undo removes them from the campaign. The text stays in your
+            asset library.
+          </li>
+          <li>Applied Google recommendations cannot be undone.</li>
+        </ul>
+        <div class="box">
+          <p>
+            <b>Stop everything.</b> Put <code>kill_switch: true</code> in <code>policy.yaml</code>.
+            From then on every change is refused, undo included. Looking still works.
+          </p>
+        </div>
+
+        <h2 style="margin-top: 22px">9. When something goes wrong</h2>
+        <ul>
+          <li>
+            <b>First, always:</b> say "Check my PerfoAds setup". It names the problem and the fix.
+          </li>
+          <li>
+            <b>"Not approved for production":</b> Google has not approved your Explorer access yet,
+            so only test accounts work. See Section 3, step 5.
+          </li>
+          <li>
+            <b>Signed out after a week:</b> your Google app is still in Testing. Sign in again with
+            <code>node packages/cli/bin/perfoads-mcp.js auth</code>, or publish the app (Section 3,
+            step 6).
+          </li>
+          <li>
+            <b>Out of daily requests:</b> Google limits requests per day. The allowance refills
+            within a day. Reading pauses before the last share so approved changes and undos can
+            still go through. Hitting it often? Ask for Basic access (see Section 3).
+          </li>
+          <li>
+            <b>Claude Desktop does not start it:</b> check that Node.js is 22.13 or newer, then
+            restart Claude.
+          </li>
+          <li><b>Anything else:</b> email contact@perfoads.com.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>10. Your data and privacy</h2>
+        <ul>
+          <li>
+            Everything is stored in one folder on your computer:
+            <code>~/.config/perfoads-mcp</code> (Mac, Linux) or
+            <code>%APPDATA%\perfoads-mcp</code> (Windows).
+          </li>
+          <li>
+            Your Google sign-in is encrypted. It is never shown in the chat or written to logs.
+          </li>
+          <li>Account copies used for checks are deleted after 24 hours.</li>
+          <li>Change history and the approval log are kept for 180 days by default.</li>
+          <li>
+            Data goes only between your computer and Google. Your AI app sees the answers it asks
+            for.
+          </li>
+        </ul>
+        <h3>Remove it completely</h3>
+        <ol>
+          <li>
+            Run <code>node packages/cli/bin/perfoads-mcp.js reset</code>. It asks Google to cancel
+            the sign-in and deletes it.
+          </li>
+          <li>Delete the settings folder above.</li>
+          <li>
+            Optional: remove the app at myaccount.google.com/permissions and delete the client in
+            your Google Cloud project.
+          </li>
+        </ol>
+        <p class="small">
+          Full privacy policy: perfoads.com/privacypolicy &middot; Questions: contact@perfoads.com
+          &middot; Licence: Apache 2.0, free to use. Google Ads is a trademark of Google LLC.
+        </p>
+      </section>
+    </div>
+  </body>
+</html>

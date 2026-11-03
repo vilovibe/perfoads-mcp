@@ -1,0 +1,6 @@
+node_modules
+dist
+pnpm-lock.yaml
+LICENSE
+docs/TOOLS.md
+docs/CHECKS.md
