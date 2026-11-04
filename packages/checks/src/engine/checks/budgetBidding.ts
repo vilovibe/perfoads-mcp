@@ -390,6 +390,44 @@ export const bb03 = defineCheck({
   },
 });
 
+/**
+ * BB04: the campaign's own 90-day result against its target, on at least 3x the 30-day bar's
+ * sales (the same pace over 90 days). null = not met, not enough sales, or no target to compare.
+ */
+function targetMet90(
+  c: CampaignNode,
+  targetRoas: number | null,
+  targetCpa: number | null,
+  bar: number,
+): { result: number; conv: number; words: string } | null {
+  const m = c.windows.m90;
+  const cost = m.cost ?? 0;
+  const conv = m.conv ?? 0;
+  const value = m.value ?? 0;
+  if (cost <= 0 || conv < bar * 3) return null;
+  if (targetRoas != null && targetRoas > 0) {
+    const roas = value / cost;
+    return roas >= targetRoas
+      ? {
+          result: Math.round(roas * 10000) / 10000,
+          conv,
+          words: `${Math.round(roas * 100)}% return against a ${Math.round(targetRoas * 100)}% target`,
+        }
+      : null;
+  }
+  if (targetCpa != null && targetCpa > 0) {
+    const cpa = cost / conv;
+    return cpa <= targetCpa
+      ? {
+          result: Math.round(cpa * 100) / 100,
+          conv,
+          words: `${cpa.toFixed(2)} per sale against a ${targetCpa.toFixed(2)} target`,
+        }
+      : null;
+  }
+  return null;
+}
+
 /** BB04 — a bid target set ahead of the conversion volume that supports it. */
 export const bb04 = defineCheck({
   id: "BB04",
@@ -416,21 +454,35 @@ export const bb04 = defineCheck({
       const tRoas = ctx.get("C.target_roas", { campaignId: c.id });
       const tCpa = ctx.get("C.target_cpa", { campaignId: c.id });
       const w30 = ctx.get("C.window(w)", { campaignId: c.id, window: "30d" });
-      findings.push(
-        finding({
-          claimKey: "bidding.ahead_of_data",
-          scope: scopeOf(c),
-          entity: { id: c.id, name: c.name },
-          cite: [verdict, strategy, tRoas, tCpa, w30],
-          facts: {
-            strategy: str(strategy),
-            target_roas: num(tRoas),
-            target_cpa: num(tCpa),
-            conv_30d: windowField(w30, "conv"),
-            status: c.status ?? null,
-          },
-        }),
-      );
+      // When the last 90 days meet the target on enough sales, the data backs the target so
+      // far: a note, never a warning (a campaign 1 sale under the 30-day bar while beating its target).
+      const bar =
+        num(tRoas) != null
+          ? ctx.settings.bidding.targetRoasMinConv30d
+          : ctx.settings.bidding.targetCpaMinConv30d;
+      const met = targetMet90(c, num(tRoas), num(tCpa), bar);
+      const f = finding({
+        claimKey: "bidding.ahead_of_data",
+        scope: scopeOf(c),
+        entity: { id: c.id, name: c.name },
+        cite: [verdict, strategy, tRoas, tCpa, w30],
+        facts: {
+          strategy: str(strategy),
+          target_roas: num(tRoas),
+          target_cpa: num(tCpa),
+          conv_30d: windowField(w30, "conv"),
+          status: c.status ?? null,
+          conv_bar_30d: bar,
+          ...(met ? { result_90d: met.result, target_met_90d: true, conv_90d: met.conv } : {}),
+        },
+        ...(met
+          ? {
+              note: `the campaign's last 90 days meet its target (${met.words}), so the data supports the target so far; only the last 30 days' sales are under the guideline of ${bar}`,
+            }
+          : {}),
+      });
+      if (met) f.maxSeverity = "info";
+      findings.push(f);
     }
     if (population === 0)
       return {

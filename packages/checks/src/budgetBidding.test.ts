@@ -9,6 +9,7 @@ import { DEFAULT_CONFOUNDER_THRESHOLDS } from "./engine/interactions/types.js";
 import { runChecks } from "./api.js";
 import {
   buildInput,
+  campaignRows,
   checkCtxOf,
   dayBefore,
   LAST_DAY,
@@ -259,6 +260,55 @@ describe("BB04 bid target ahead of the data", () => {
       ),
     );
     expect(state(r)).toBe("not_checkable");
+  });
+});
+
+describe("BB04 verdict follows the 90-day result against the target", () => {
+  // a Jackets PMax on a 300% target, 29.94 sales in the last 30 days (bar 30) and
+  // 101.94 over the 90 days, $100 a day at 333%: the data backs the target so far
+  const jackets = (valuePerDay: number, conv30 = 29.94, conv90 = 101.94): FixtureOptions => {
+    const spec: CampaignSpec = {
+      id: "11",
+      name: "PMax - Jackets",
+      type: "PERFORMANCE_MAX",
+      strategy: "TARGET_ROAS",
+      targetRoas: 3,
+      cost: 100,
+      value: valuePerDay,
+    };
+    const rows = campaignRows(spec);
+    const daily = rows.daily.map((r, i) => ({
+      ...r,
+      conversions: i < 30 ? conv30 / 30 : (conv90 - conv30) / 60,
+    }));
+    return {
+      campaigns: [spec],
+      data: { campaigns: [{ ...rows.campaign, conversions: conv90 }], campaignDailyMetrics: daily },
+    };
+  };
+  it("333% over 90 days against 300%: a note (info), says why", () => {
+    const f = findingsOf(run("BB04", jackets(333)))[0];
+    expect(f).toBeDefined();
+    expect(f?.maxSeverity).toBe("info");
+    expect(f?.facts).toMatchObject({ target_roas: 3, conv_bar_30d: 30, target_met_90d: true });
+    expect(f?.facts.result_90d).toBeCloseTo(3.33, 2);
+    expect(f?.note).toBe(
+      "the campaign's last 90 days meet its target (333% return against a 300% target), so the data supports the target so far; only the last 30 days' sales are under the guideline of 30",
+    );
+  });
+  it("250% over 90 days against 300%: the warning stays", () => {
+    const f = findingsOf(run("BB04", jackets(250)))[0];
+    expect(f).toBeDefined();
+    expect(f?.maxSeverity).toBeUndefined();
+    expect(f?.facts.target_met_90d).toBeUndefined();
+    expect(f?.note).toBeUndefined();
+  });
+  it("30 sales over 90 days (3 in the last 30) meets the target but is under 3x the bar: the warning stays", () => {
+    const f = findingsOf(run("BB04", jackets(333, 3, 30)))[0];
+    expect(f).toBeDefined();
+    expect(f?.maxSeverity).toBeUndefined();
+    expect(f?.facts.target_met_90d).toBeUndefined();
+    expect(f?.note).toBeUndefined();
   });
 });
 
