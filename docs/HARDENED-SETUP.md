@@ -10,7 +10,7 @@ The hardened setup narrows this: **the server and its settings folder run as a d
 
 > Status: these recipes follow each tool's documentation. They have not yet been run end to end on every OS by the maintainers. Try them with a Google Ads **test account** first, and run `doctor` as the service user.
 
-> Not on npm yet: until the first release, replace `npm install ... perfoads-mcp@<version>` below with a build from source (README) copied into the root-owned folder, and use its `packages/cli/bin/perfoads-mcp.js` as the entry point.
+> Built from source instead of npm? Replace `npm install ... perfoads-mcp@<version>` below with that build copied into the root-owned folder, and use its `packages/cli/bin/perfoads-mcp.js` as the entry point.
 
 ## The rules every recipe follows
 

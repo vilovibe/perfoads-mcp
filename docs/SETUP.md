@@ -58,7 +58,7 @@ Google's API does not report your level. `init` asks for it, `doctor` shows what
 
 ## 7. Run init
 
-Not on npm yet: until the first release, build from source (README, "Install and connect") and run `node <full path>/packages/cli/bin/perfoads-mcp.js init` instead of the `npx` command; from then on use the command it prints.
+If you built from source (README, "Install and connect"), run `node <full path>/packages/cli/bin/perfoads-mcp.js init` instead of the `npx` command; from then on use the command it prints.
 
 ```sh
 npx perfoads-mcp@<version> init
@@ -125,7 +125,7 @@ startup_timeout_sec = 60
 tool_timeout_sec = 300
 ```
 
-Add `env = { PERFOADS_MCP_HOME = "/full/path/to/settings" }` only if you used a non-default settings folder for `init`. Not on npm yet: use the `node` command and full path that `init` prints instead of `npx`.
+Add `env = { PERFOADS_MCP_HOME = "/full/path/to/settings" }` only if you used a non-default settings folder for `init`. If you built from source, use the `node` command and full path that `init` prints instead of `npx`.
 
 Codex can run shell commands, so the same rule as for Claude Code applies: the approval step only holds against the agent with the [hardened setup](HARDENED-SETUP.md).
 

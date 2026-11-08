@@ -2,11 +2,11 @@
 
 # PerfoAds MCP
 
-A self-hosted MCP server that works with Google Ads. It lets an AI assistant (Claude Desktop, Claude Code, Cursor and other MCP apps) **read** your Google Ads accounts, run **100+ deterministic account checks**, and **change things only with your approval and within limits you set** in a policy file.
+A self-hosted MCP server that works with Google Ads. It lets an AI assistant (Claude Desktop, Claude Code, Cursor and other MCP apps) **read** your Google Ads accounts, run **162 deterministic account checks**, and **change things only with your approval and within limits you set** in a policy file.
 
 PerfoAds MCP works with Google Ads. It is not made, endorsed or supported by Google (not a Google product). It works with the Google Ads API through **your own** Google Cloud project and your own sign-in; nothing goes through anyone else's servers.
 
-Package and CLI: `perfoads-mcp`. License: Apache-2.0. Status: early alpha (`0.2.0-alpha.0`), not published to npm yet.
+Package and CLI: `perfoads-mcp`. License: Apache-2.0. Status: early alpha. On npm: [`perfoads-mcp`](https://www.npmjs.com/package/perfoads-mcp) (`0.2.0-alpha.1`).
 
 ## Work with Paweł
 
@@ -38,26 +38,24 @@ Step by step: [docs/SETUP.md](docs/SETUP.md).
 
 ## Install and connect
 
-> **Not on npm yet.** The package name `perfoads-mcp` is not published (or reserved) yet, so `npx perfoads-mcp ...` would fetch whatever someone else may publish under that name. Until the first release, install from source:
->
-> ```sh
-> git clone https://github.com/vilovibe/perfoads-mcp.git
-> cd perfoads-mcp
-> pnpm install --frozen-lockfile && pnpm build
-> node packages/cli/bin/perfoads-mcp.js init
-> ```
->
-> `init` then prints your AI app's config for this copy: `"command": "<full path to node>"` with `"args": ["<full path>/packages/cli/bin/perfoads-mcp.js", "serve"]`, and for Claude Code `claude mcp add --scope user perfoads-mcp -- <full path to node> <full path>/packages/cli/bin/perfoads-mcp.js serve`. Wherever these docs say `npx perfoads-mcp@<version> <command>`, run `"<full path to node>" "<full path>/packages/cli/bin/perfoads-mcp.js" <command>`; every message, doctor fix and the approval page print exactly that command for your install.
-
-Once it is on npm:
-
 ```sh
-npx perfoads-mcp@<version> init
+npx perfoads-mcp@0.2.0-alpha.1 init
 ```
 
-Always name the exact version (`@0.1.0`, not `@latest` or none), so npm can't hand you a different release. `init` asks for your OAuth client id and secret, opens Google's sign-in in your browser, saves the sign-in encrypted, writes a read-only starter policy, runs `doctor`, and prints the config for your AI app.
+Always name the exact version (`@0.2.0-alpha.1`, not `@latest` or none), so npm can't hand you a different release. `init` asks for your OAuth client id and secret, opens Google's sign-in in your browser, saves the sign-in encrypted, writes a read-only starter policy, runs `doctor`, and prints the config for your AI app.
 
-After the npm release, the AI app config is (until then use the `node` form above; `init` prints it with your version filled in):
+Or build from source:
+
+```sh
+git clone https://github.com/vilovibe/perfoads-mcp.git
+cd perfoads-mcp
+pnpm install --frozen-lockfile && pnpm build
+node packages/cli/bin/perfoads-mcp.js init
+```
+
+`init` then prints your AI app's config for that copy (full path to `node` and to `packages/cli/bin/perfoads-mcp.js`). Wherever these docs say `npx perfoads-mcp@<version> <command>`, run that `node` command instead.
+
+The AI app config (`init` prints it with your version filled in; for a source build it prints the `node` form):
 
 **Claude Desktop** (Settings > Developer > Edit Config, `claude_desktop_config.json`), **Cursor** (`~/.cursor/mcp.json`):
 
