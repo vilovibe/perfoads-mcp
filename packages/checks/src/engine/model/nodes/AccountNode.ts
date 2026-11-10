@@ -256,6 +256,8 @@ export interface AccountAttrs {
       | Array<{ changes: number; person: number; google: number; api: number; unknown: number }>
       | undefined;
     noEditor?: number | undefined;
+    /** M18 (AS24): changes per day (yyyy-mm-dd) not made by Google's automation. Optional: a hand-built model may omit it. */
+    madeByPeopleByDay?: Record<string, number> | undefined;
     /**
      * R3.6c: changes Google made itself — an auto-applied recommendation
      * (`auto_apply`) or Google's own tooling (`google_internal`) — with what they
@@ -375,6 +377,8 @@ export interface AccountAttrs {
     targetCpa: number | null;
     campaignCount: number | null;
     nonRemovedCampaignCount: number | null;
+    /** M10 fix round: the max CPC cap in the account currency (0 = none); null / absent = not read. */
+    cpcBidCeiling?: number | null;
   }[];
   biddingOverrides: number;
   /**

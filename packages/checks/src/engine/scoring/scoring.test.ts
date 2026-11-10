@@ -1617,7 +1617,7 @@ describe("countMoneyOnce (R14)", () => {
     expect(pricesWholeCampaign(priced("TR06", 100, { id: "8" }, "waste"))).toBe(true);
   });
   it("a kept SK20 page counts only the money the product checks do not price", () => {
-    // Live account Luxe page: SH20 prices $95.93 of its 90-day spend; the page prices $161.13 a month
+    // A product page: SH20 prices $95.93 of its 90-day spend; the page prices $161.13 a month
     const page = priced(
       "SK20",
       161.13,

@@ -37,6 +37,8 @@ import { foldBrandText } from "../shared/campaignClassification.js";
 import { requiredListCoverageOf } from "../registry/metrics.js";
 import { ESSENTIAL_ROLES, ESSENTIAL_ROLE_LABELS } from "../shared/audienceRoles.js";
 import type { CampaignNode } from "../model/nodes/CampaignNode.js";
+import { CLAIM_KEYS } from "../registry/claimKeys.js";
+import { addDays } from "../model/windows.js";
 
 const NEGATIVE_CRITERIA = "account_negative_criteria";
 
@@ -152,7 +154,21 @@ const AS01 = defineCheck({
   },
 });
 
-/** AS02 — a brand campaign runs on a value/CPA target, or the ladder would propose one for it. */
+/** M10 (J3): a brand Search campaign on plain Maximize conversions / conversion value (no target) bids for sales on its own name too. */
+const SALES_BIDDING: ReadonlySet<string> = new Set([
+  "MAXIMIZE_CONVERSIONS",
+  "MAXIMIZE_CONVERSION_VALUE",
+]);
+
+/**
+ * AS02 — a brand campaign runs on a value/CPA target, or bids for sales on its own name.
+ */
+const PORTFOLIO_TARGET_TYPES: ReadonlySet<string> = new Set([
+  "TARGET_ROAS",
+  "TARGET_CPA",
+  "MAXIMIZE_CONVERSION_VALUE",
+  "MAXIMIZE_CONVERSIONS",
+]);
 const AS02 = defineCheck({
   id: "AS02",
   claimKey: "brand.campaign_target_mismatch",
@@ -177,7 +193,53 @@ const AS02 = defineCheck({
       };
 
     const findings: CheckFinding[] = [];
+    const notJudged: string[] = [];
     for (const c of brandCampaigns) {
+      const type = String(c.attrs.type ?? "");
+      if (type === "SHOPPING" && c.attrs.biddingStrategySource === "portfolio") {
+        const s = ctx.model.attrs.biddingStrategies.find(
+          (b) => b.id === c.attrs.portfolioStrategyId,
+        );
+        const cap = s?.cpcBidCeiling;
+        if (!s || cap === null || cap === undefined || !Number.isFinite(cap)) {
+          notJudged.push(c.name);
+          continue;
+        }
+        if (cap > 0 || !PORTFOLIO_TARGET_TYPES.has(String(s.type ?? "").toUpperCase())) continue;
+        findings.push(
+          finding({
+            claimKey: "brand.campaign_target_mismatch",
+            scope: {
+              type: "campaign",
+              id: c.id,
+              name: c.name,
+              campaignId: c.id,
+              campaignName: c.name,
+            },
+            cite: [],
+            entity: { id: c.id, name: c.name },
+            facts: {
+              strategy: String(s.type ?? ""),
+              target_roas: s.targetRoas,
+              target_cpa: s.targetCpa,
+              campaign_type: type,
+              layer_role: c.attrs.layerRole ?? "",
+              portfolio_strategy_id: s.id,
+              portfolio_strategy_name: s.name ?? "",
+              portfolio_strategy_type: String(s.type ?? ""),
+              portfolio_cpc_cap: 0,
+              portfolio_campaign_count: s.nonRemovedCampaignCount ?? s.campaignCount,
+            },
+            population: brandCampaigns.length,
+            note: `brand Shopping on the shared bid strategy "${s.name ?? s.id}" with no max CPC cap: Google can bid any price for a click on your own name`,
+          }),
+        );
+        continue;
+      }
+      if (type === "SHOPPING" && c.attrs.biddingStrategySource !== "standard") {
+        notJudged.push(c.name);
+        continue;
+      }
       const strategy = ctx.get("C.strategy", { campaignId: c.id });
       const targetRoas = ctx.get("C.target_roas", { campaignId: c.id });
       const targetCpa = ctx.get("C.target_cpa", { campaignId: c.id });
@@ -186,7 +248,11 @@ const AS02 = defineCheck({
       // `C.ladder_verdict` already carries the brand exemption: a brand campaign
       // never reads 'ready_for_target', so this leg cannot re-propose one for it.
       const proposed = str(verdict) === "ready_for_target";
-      if (!onTarget && !proposed) continue;
+      const salesBidding =
+        !onTarget &&
+        type === "SEARCH" &&
+        SALES_BIDDING.has(String(str(strategy) ?? "").toUpperCase());
+      if (!onTarget && !proposed && !salesBidding) continue;
       findings.push(
         finding({
           claimKey: "brand.campaign_target_mismatch",
@@ -203,19 +269,37 @@ const AS02 = defineCheck({
             strategy: str(strategy),
             target_roas: num(targetRoas),
             target_cpa: num(targetCpa),
+            campaign_type: type,
+            layer_role: c.attrs.layerRole ?? "",
           },
           population: brandCampaigns.length,
           note: onTarget
             ? "brand campaign already on a value/CPA target"
-            : "the ladder would propose a target for a brand campaign",
+            : salesBidding
+              ? "brand Search campaign on Maximize conversions or conversion value with no target: it bids for sales on searches for your own name"
+              : "the ladder would propose a target for a brand campaign",
         }),
       );
     }
-    if (findings.length > 0) return { state: "fires", findings };
+    const unjudged =
+      notJudged.length > 0
+        ? `; not judged: ${notJudged.join(", ")} (brand Shopping on a shared bidding strategy whose max CPC cap we could not read, or a bidding we could not read)`
+        : "";
+    if (findings.length > 0) {
+      if (unjudged) for (const f of findings) f.note = `${f.note ?? ""}${unjudged}`;
+      return { state: "fires", findings };
+    }
+    if (notJudged.length === brandCampaigns.length) {
+      return {
+        state: "not_checkable",
+        reason: `every brand campaign is brand Shopping whose bidding or shared strategy's max CPC cap we could not read: ${notJudged.join(", ")}`,
+        table: "campaigns",
+      };
+    }
     return {
       state: "none_found",
-      population: brandCampaigns.length,
-      note: "the brand exemption holds: no brand campaign is on, or proposed for, a value/CPA target",
+      population: brandCampaigns.length - notJudged.length,
+      note: `the brand exemption holds: no brand campaign is on, or proposed for, a value/CPA target${unjudged}`,
     };
   },
 });
@@ -912,6 +996,136 @@ const AS13 = defineCheck({
   },
 });
 
+/** AS24 (M18, J40): under this many changes in a 30-day block counts as a quiet month. */
+export const AS24_MIN_CHANGES_PER_MONTH = 5;
+/** AS24: this many quiet 30-day blocks in a row before it speaks. */
+export const AS24_QUIET_MONTHS = 2;
+const AS24_BLOCK_DAYS = 30;
+
+/**
+ * AS24 (M18, J40) — a spending account that nobody has changed in months.
+ *
+ * Reads AS13's source, the change feed, counting only changes Google's own
+ * automation did not make. The feed is cut into 30-day blocks counting back
+ * from the last day it covers; a block counts only when the feed reaches back
+ * over all of it (its first row), so an unread month is never a quiet one.
+ *
+ * Google keeps about 30 days of change history, so most audits can see one
+ * block: busy in it = none_found (the account is not two months quiet); quiet
+ * in it = insufficient_data (the month before is not readable). Fires only when
+ * the feed covers 2+ blocks and the latest 2+ are each under 5 changes.
+ * FACTUAL ONLY: the changes per month, never a guess at why.
+ */
+const AS24 = defineCheck({
+  id: "AS24",
+  claimKey: CLAIM_KEYS.ACCOUNT_LOW_ACTIVITY,
+  title: "a spending account had fewer than 5 changes a month for 2 months or more",
+  clientLabel: "how often the account is worked on",
+  group: "structure",
+  metrics: ["A.change_count", "A.change_days_covered", "C.spend"],
+  confounders: ["AS11"],
+  requires: ["changeHistory", "campaigns"],
+  impactFormula: "IMP_NONE",
+  noneFoundMeans: "The account was worked on in the last month: 5 or more changes were made.",
+  run(ctx: CheckCtx): CheckResult {
+    const gate = gateOnData(ctx, this.requires);
+    if (gate) return gate;
+    const h = ctx.model.attrs.changeHistory;
+    const byDay = h.madeByPeopleByDay;
+    if (byDay == null)
+      return {
+        state: "not_checkable",
+        reason: "the model carries no changes per day",
+        table: "changeHistory",
+        category: "our_gap",
+      };
+    const spend = ctx.model.windows.m90.cost ?? 0;
+    if (!(spend > 0))
+      return {
+        state: "not_checkable",
+        reason:
+          "the account spent nothing in the window, so how often it is worked on does not cost anything",
+        table: "campaigns",
+        category: "not_present",
+      };
+    const ends = [ctx.window.end, h.lastDate]
+      .filter((d): d is string => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d))
+      .sort();
+    const end = ends[ends.length - 1];
+    if (!end || !h.firstDate) {
+      return {
+        state: "insufficient_data",
+        reason:
+          "the change feed holds no dated change, so no month can be counted (Google keeps about 30 days of change history)",
+      };
+    }
+    // blocks back from the end; one counts when the feed reaches its first day
+    const blocks: { from: string; to: string; changes: number }[] = [];
+    for (let k = 0; k < 24; k++) {
+      const to = addDays(end, -AS24_BLOCK_DAYS * k);
+      const from = addDays(to, -(AS24_BLOCK_DAYS - 1));
+      if (from < h.firstDate) break;
+      let changes = 0;
+      for (const [day, n] of Object.entries(byDay)) if (day >= from && day <= to) changes += n;
+      blocks.push({ from, to, changes });
+    }
+    const perMonth = blocks.map((b) => `${b.from} to ${b.to}: ${b.changes}`);
+    const latest = blocks[0];
+    if (!latest) {
+      const all = Object.values(byDay).reduce((a, b) => a + b, 0);
+      if (all >= AS24_MIN_CHANGES_PER_MONTH) {
+        return {
+          state: "none_found",
+          population: 1,
+          note: `${all} changes from ${h.firstDate} to ${end}, under 30 days of feed, already ${AS24_MIN_CHANGES_PER_MONTH} or more`,
+        };
+      }
+      return {
+        state: "insufficient_data",
+        reason: `the change feed covers ${h.firstDate} to ${end}, under one 30-day month (Google keeps about 30 days of change history)`,
+      };
+    }
+    if (latest.changes >= AS24_MIN_CHANGES_PER_MONTH) {
+      return {
+        state: "none_found",
+        population: 1,
+        note: `${latest.changes} changes in the 30 days ${latest.from} to ${latest.to} (Google automation not counted)`,
+      };
+    }
+    let quiet = 0;
+    while (quiet < blocks.length && blocks[quiet]!.changes < AS24_MIN_CHANGES_PER_MONTH) quiet++;
+    if (quiet < AS24_QUIET_MONTHS) {
+      return {
+        state: "insufficient_data",
+        reason: `${latest.changes} change(s) in ${latest.from} to ${latest.to}, but the month before is not in the change feed (Google keeps about 30 days of change history), so 2 quiet months cannot be shown`,
+      };
+    }
+    return {
+      state: "fires",
+      findings: [
+        finding({
+          claimKey: this.claimKey,
+          scope: { type: "account", id: ctx.model.id, name: ctx.model.name },
+          cite: [ctx.get("A.change_count"), ctx.get("A.change_days_covered")].filter((v) =>
+            isOk(v),
+          ),
+          facts: {
+            quiet_months: quiet,
+            changes_per_month: perMonth.slice(0, quiet).join("; "),
+            most_changes_in_a_quiet_month: Math.max(
+              ...blocks.slice(0, quiet).map((b) => b.changes),
+            ),
+            min_changes_per_month: AS24_MIN_CHANGES_PER_MONTH,
+            spend_90d: Number(spend.toFixed(2)),
+          },
+          population: 1,
+          note: "changes made in the interface or by an API tool; changes Google made itself are not counted",
+        }),
+      ],
+    };
+  },
+});
+
 type GoogleMadeChange = {
   date: string;
   campaignIds: string[];
@@ -1548,6 +1762,7 @@ export const STRUCTURE_CHECKS: CheckDefinition[] = [
   AS09,
   AS10,
   AS13,
+  AS24,
   AS14,
   AS15,
   AS16,

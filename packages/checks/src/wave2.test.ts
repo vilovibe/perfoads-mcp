@@ -228,8 +228,21 @@ describe("PX02 (profile set)", () => {
     const r = runOne("PX02", make([category("acme boots", 5), category("running shoes", 95)]));
     expect(state(r)).toBe("none_found");
   });
-  it("is not checkable with no brand Search campaign or no categories", () => {
+  it("is not checkable with no categories", () => {
     expect(state(runOne("PX02", make([])))).toBe("not_checkable");
+  });
+  it("names the brand Search campaign, or '' and a note when there is none", () => {
+    const rows = [category("acme boots", 80), category("running shoes", 20)];
+    expect(findingsOf(runOne("PX02", make(rows)))[0]?.facts.brand_search_campaign).toBe(
+      "Brand search",
+    );
+    const input = pmaxAccount({ campaigns: [PMAX], insights: rows });
+    const r = runOne("PX02", {
+      ...input,
+      data: { ...input.data, profile: { brandTerms: ["Acme"], businessType: "ecommerce" } },
+    });
+    expect(findingsOf(r)[0]?.facts.brand_search_campaign).toBe("");
+    expect(findingsOf(r)[0]?.note).toContain("no brand Search campaign found");
   });
 });
 
@@ -787,9 +800,9 @@ function salesAccount(
 
 describe("TR09 sales fell while the return held (R4)", () => {
   // a product PMax: $15.1k at $2.78 per $1 ($41.9k) -> $12.4k at $2.41 ($29.8k) a month
-  const belts = salesAccount([15_100 / 30, 2.78], [12_400 / 30, 2.41]);
+  const mugs = salesAccount([15_100 / 30, 2.78], [12_400 / 30, 2.41]);
   it("fires on the product PMax numbers: sales -29%, return -13% (under TR01's 20% bar)", () => {
-    const f = findingsOf(runOne("TR09", belts))[0];
+    const f = findingsOf(runOne("TR09", mugs))[0];
     expect(f?.scope.name).toBe("Product PMax");
     expect(f?.facts.sales_value_prior30 as number).toBeCloseTo(41_978, -1);
     expect(f?.facts.sales_value_30d as number).toBeCloseTo(29_884, -1);
@@ -803,10 +816,10 @@ describe("TR09 sales fell while the return held (R4)", () => {
     // the title says how the return moved: it fell 13%, less than sales
     expect(f?.title).toBe("Campaign sales fell, and its return per $1 fell less");
     // TR01 stays quiet on it: the return moved under its bar
-    expect(state(runOne("TR01", belts))).toBe("none_found");
+    expect(state(runOne("TR01", mugs))).toBe("none_found");
   });
   it("is info with no money and no advice", () => {
-    const f = runChecks(belts).findings.find((x) => x.checkId === "TR09");
+    const f = runChecks(mugs).findings.find((x) => x.checkId === "TR09");
     expect(f?.severity.severity).toBe("info");
     expect(f?.impact.value ?? 0).toBe(0);
   });

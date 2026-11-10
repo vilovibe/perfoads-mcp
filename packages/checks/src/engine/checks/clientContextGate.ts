@@ -114,7 +114,7 @@ export interface ClientDeclaredTarget {
  * separate conditions have to hold, and any one of them failing yields null
  * rather than a guess:
  *   - the row's `source` is `'client'` (an AI pre-fill is not a declaration);
- *   - `declaredTarget.source` is `'client'` too — belt and braces against a
+ *   - `declaredTarget.source` is `'client'` too — a second guard against a
  *     future loader change that widens what it parses;
  *   - `parseDeclaredTarget` returned a value, i.e. the text named a metric and
  *     a number. "As high as possible" is not a target.

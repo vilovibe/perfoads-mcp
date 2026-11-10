@@ -350,8 +350,8 @@ describe("SK04 the same keyword in two ad groups", () => {
           ],
           // Google reuses criterion id 31 for the same keyword in both ad groups
           keywords: [
-            keyword({ id: "31", campaignId: "11", adGroupId: "21", text: "leather belt" }),
-            keyword({ id: "31", campaignId: "12", adGroupId: "22", text: "leather belt" }),
+            keyword({ id: "31", campaignId: "11", adGroupId: "21", text: "leather mug" }),
+            keyword({ id: "31", campaignId: "12", adGroupId: "22", text: "leather mug" }),
           ],
           ...(o.locations ? { bidModifiers: o.locations } : {}),
           ...(o.excluded ? { locationCriteria: o.excluded } : {}),

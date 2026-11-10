@@ -137,6 +137,7 @@ const EXPECTED: Record<string, CheckStatus> = {
   AS09: "clean",
   AS10: "info",
   AS13: "not_run",
+  AS24: "not_run",
   AS14: "clean",
   AS15: "not_run",
   AS16: "clean",
@@ -186,6 +187,7 @@ const EXPECTED: Record<string, CheckStatus> = {
   SK32: "finding",
   SK33: "clean",
   SK35: "info",
+  SK42: "not_run", // M18 fix round: an AI judgement, never a code verdict in the connector
   // wave 2: no Performance Max campaign here (see the PMax build below); SL02, SL04, SL05,
   // SL09, BB12 and BB13 fire on the search campaigns; TR03, TR08 and PR02 state notes
   PX01: "not_run",
@@ -259,6 +261,11 @@ const EXPECTED: Record<string, CheckStatus> = {
   SH22: "not_run",
   SH23: "not_run",
   SH24: "not_run",
+  // M15 Merchant Center feed checks: their product details are not in the Google Ads API
+  SH26: "not_run",
+  SH27: "not_run",
+  SH28: "not_run",
+  SH29: "not_run",
   // every campaign in one country (nothing to compare), each in one country (SL10 clean)
   SL03: "not_run",
   SL10: "clean",
@@ -370,9 +377,9 @@ const PMAX_EXPECTED: Record<string, CheckStatus> = {
 
 /**
  * Queries of a build of the Search-only fixture account (82 before sections were skipped by
- * campaign type; +2 for the recent weeks' budget share and the landing pages' campaigns; +1 for spend by network).
+ * campaign type; +2 for the recent weeks' budget share and the landing pages' campaigns; +1 for spend by network; +1 for purchases by click or view).
  */
-const SEARCH_ONLY_QUERIES = 78;
+const SEARCH_ONLY_QUERIES = 79;
 
 describe("fixture -> readers -> snapshot -> adapter -> checks", () => {
   it("reads every section, and the snapshot fits its schema", async () => {
@@ -551,7 +558,7 @@ describe("fixture -> readers -> snapshot -> adapter -> checks", () => {
     // one query per part, plus the PMax categories, places and search terms of its campaign;
     // no placements, video or Demand Gen read (no such campaign): 6 queries fewer; + the last
     // 7 days' impressions per campaign and product (a Shopping / PMax account)
-    expect(seen.length).toBe(86);
+    expect(seen.length).toBe(87);
   });
 
   it("PMax URL exclusions not read: PX20 not run (never a missing-pages finding), the caps and automation stand", async () => {
@@ -579,7 +586,7 @@ describe("fixture -> readers -> snapshot -> adapter -> checks", () => {
     });
     // 82 + 30 PMax term queries + 5 category queries + 15 place queries (no placements,
     // video or Demand Gen read: no such campaign)
-    expect(seen.length).toBe(133);
+    expect(seen.length).toBe(134);
     const input = toEvidenceInput(snap);
     const status = (t: string) => input.statusRows?.find((r) => r.table_name === t);
     const notRead = (t: string) =>
@@ -674,7 +681,7 @@ describe("fixture -> readers -> snapshot -> adapter -> checks", () => {
     // + one products read per live Shopping / PMax campaign (2 here, not one account read),
     // + the negative (excluded) locations read,
     // + the Demand Gen ad groups' channel controls (B12)
-    expect(seen.length).toBe(97);
+    expect(seen.length).toBe(98);
   });
 
   it("with the wave-3 campaigns, each check built scoped on its own gives the full build's outcome", async () => {

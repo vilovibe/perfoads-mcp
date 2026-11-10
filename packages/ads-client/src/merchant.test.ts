@@ -53,7 +53,7 @@ describe("Merchant Center client", () => {
               productAttributes: {
                 customLabel0: "Bestseller",
                 customLabel4: "in_stock",
-                productTypes: ["Belts > Women"],
+                productTypes: ["Mugs > Women"],
                 brand: "Demo",
               },
             },
@@ -78,7 +78,7 @@ describe("Merchant Center client", () => {
       contentLanguage: "en",
       feedLabel: "US",
       labels: ["bestseller", null, null, null, "in_stock"],
-      types: ["belts", "women"],
+      types: ["mugs", "women"],
       brand: "demo",
       local: false,
     });

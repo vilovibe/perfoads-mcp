@@ -213,7 +213,7 @@ describe("proposals", () => {
       () =>
         checkProposal(
           "add_campaign_negatives",
-          { campaign_ids: ["111"], negatives: [{ text: "belts" }] },
+          { campaign_ids: ["111"], negatives: [{ text: "mugs" }] },
           ctx,
         ),
       /own text/,

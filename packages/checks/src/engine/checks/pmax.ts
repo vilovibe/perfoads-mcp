@@ -260,6 +260,9 @@ const PX02 = defineCheck({
       unread.length > 0
         ? `the search categories of ${namesOf(unread.map((c) => c.name))} were not read`
         : null;
+    // no brand Search campaign is no exit: the finding says so
+    const brandSearch =
+      campaignsOf(ctx).find((c) => c.attrs.type === "SEARCH" && c.attrs.isBrand) ?? null;
     const findings: CheckFinding[] = [];
     let population = 0;
     for (const c of pmaxCampaigns(ctx)) {
@@ -285,9 +288,11 @@ const PX02 = defineCheck({
             brand_list_state: listState,
             ...(listState !== "not_checked" ? { brand_lists_attached_count: ownLists.length } : {}),
             ...(listNames.length > 0 ? { brand_list_names: listNames.join(" | ") } : {}),
+            // '' = no brand Search campaign
+            brand_search_campaign: brandSearch?.name ?? "",
           },
           population,
-          note: `search categories are Google's top categories per campaign, a sample; ${brandListNote(c)}${exBrand ? `; return ${exBrand.pmax_roas_with_brand} with brand searches, ${exBrand.pmax_roas_without_brand ?? "unknown"} without (search terms are a sample, ${exBrand.search_terms_share_of_spend_pct}% of spend)` : ""}`,
+          note: `search categories are Google's top categories per campaign, a sample; ${brandListNote(c)}${exBrand ? `; return ${exBrand.pmax_roas_with_brand} with brand searches, ${exBrand.pmax_roas_without_brand ?? "unknown"} without (search terms are a sample, ${exBrand.search_terms_share_of_spend_pct}% of spend)` : ""}${brandSearch ? "" : "; no brand Search campaign found"}`,
         }),
       );
     }

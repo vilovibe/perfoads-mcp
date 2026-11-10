@@ -79,6 +79,8 @@ export interface ConversionDetail {
         allConversions: number;
       }[]
     | null;
+  /** purchases per campaign by where they came from (CLICK, ENGAGED_VIEW, IMPRESSION, or another value as Google sent it); null = not read */
+  purchaseSplit: { campaignId: string; eventType: string; conversions: number }[] | null;
 }
 
 export const ConversionMetricsSchema = z.object({
@@ -222,6 +224,17 @@ export const viewThroughQuery = (range: DateRange): string => `
     ${where([dateCondition(range)])}
     ORDER BY campaign.id`;
 
+/** Purchases per campaign, split by where they came from: a click, an engaged view or an impression. */
+export const purchaseSplitQuery = (range: DateRange): string => `
+    SELECT
+      campaign.id,
+      segments.conversion_attribution_event_type,
+      segments.conversion_action_category,
+      metrics.conversions
+    FROM campaign
+    ${where([dateCondition(range), "segments.conversion_action_category = 'PURCHASE'", "metrics.conversions > 0"])}
+    ORDER BY campaign.id`;
+
 export const VALUE_RULES_QUERY = `
     SELECT
       conversion_value_rule.id,
@@ -363,6 +376,16 @@ const detailOf = (
           }))
           .filter((r) => r.campaignId !== "")
       : null,
+    purchaseSplit: partOk(parts, "purchase_split")
+      ? (data.purchase_split ?? [])
+          .filter((row) => enumValue(get(row, "segments.conversionActionCategory")) === "PURCHASE")
+          .map((row) => ({
+            campaignId: id(get(row, "campaign.id")) ?? "",
+            eventType: enumValue(get(row, "segments.conversionAttributionEventType")) ?? "",
+            conversions: double(get(row, "metrics.conversions")),
+          }))
+          .filter((r) => r.campaignId !== "")
+      : null,
     valueByRule: partOk(parts, "value_by_rule")
       ? [...byRule.entries()].map(([k, v]) => {
           const [campaignId = "", dimension = ""] = k.split("|");
@@ -407,6 +430,9 @@ export const conversionsReader: ReaderDef<
           view_through: ctx.isManager
             ? { skipped: "a manager account has no conversion metrics of its own." }
             : { gaql: viewThroughQuery(input.dateRange) },
+          purchase_split: ctx.isManager
+            ? { skipped: "a manager account has no conversion metrics of its own." }
+            : { gaql: purchaseSplitQuery(input.dateRange) },
         }
       : {}),
   }),

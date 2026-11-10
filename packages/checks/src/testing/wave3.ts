@@ -74,13 +74,15 @@ export interface ProductSpec {
   issues?: string[];
   /** false = only in the status list (no product row: did not serve) */
   served?: boolean;
+  /** the product type (absent = "Shoes > Trail"; null = blank in the feed) */
+  productType?: string | null;
 }
 
 export const product = (p: ProductSpec): Row => ({
   product_id: p.id,
   title: p.title ?? `Trail shoe ${p.id}`,
   brand: "Acme",
-  product_type: "Shoes > Trail",
+  product_type: p.productType === undefined ? "Shoes > Trail" : p.productType,
   feed_label: p.feedLabel ?? "US",
   ...Object.fromEntries(
     [0, 1, 2, 3, 4].map((i) => [`custom_label_${i}`, (p.labels ?? ["core"])[i] ?? null]),

@@ -22,15 +22,25 @@
 
 export interface CheckSettings {
   bidding: {
-    /** Conversions in the last 30 days a campaign needs before a target CPA is backed by data. */
+    /**
+     * Conversions in the last 30 days a campaign needs before a target CPA (cost per
+     * sale) is backed by data. Also the "ready for a target" bar on a Maximize
+     * conversions campaign with no target.
+     */
     targetCpaMinConv30d: number;
     /**
-     * Conversions in the last 30 days a campaign needs before a target ROAS is
-     * backed by data. Also the bar for "ready for a target" on a campaign with none,
-     * and BB14's bar for advising any switch to value bidding (Google refuses one with
-     * too few recent conversions; @perfoads/changes VALUE_BIDDING_MIN_CONV_30D matches it).
+     * Conversions in the last 30 days a campaign needs before a target ROAS (sales
+     * value) is backed by data. Also the "ready for a target" bar on a Maximize
+     * conversion value campaign with no target.
      */
     targetRoasMinConv30d: number;
+    /**
+     * Google's own minimum (conversions in the last 30 days) for a switch to value
+     * bidding: BB14's bar for advising one, and the "ready for a target" bar on a
+     * campaign on any other bidding (it moves to value bidding with no target first).
+     * @perfoads/changes VALUE_BIDDING_MIN_CONV_30D matches it.
+     */
+    valueBiddingMinConv30d: number;
     /** BB01: budget utilisation under this share is "low". */
     lowUtilisation: number;
     /** BB01: campaigns spending less than this in the window (USD scale) are not judged. */
@@ -211,7 +221,7 @@ export interface CheckSettings {
     minImpressions: number;
     /** VD02: more than this share of impressions lost between the 25% and the 100% mark is a steep drop. */
     quartileDropoffMax: number;
-    /** VD04: view-through conversions above this percent of a Video campaign's conversions. */
+    /** VD04: conversions from views at or above this percent of a Video campaign's conversions (the app's one "inflated" bar, 20%). */
     viewThroughSharePct: number;
     /** VD07: the reference band for the average cost per view (USD scale): under the low end ... */
     cpvBandMinUsd: number;
@@ -324,8 +334,9 @@ export interface CheckSettings {
 
 export const DEFAULT_SETTINGS: CheckSettings = {
   bidding: {
-    targetCpaMinConv30d: 15,
-    targetRoasMinConv30d: 30,
+    targetCpaMinConv30d: 30,
+    targetRoasMinConv30d: 50,
+    valueBiddingMinConv30d: 30,
     lowUtilisation: 0.5,
     lowUtilisationMinSpendUsd: 50,
     lostIsBudgetPct: 10,
@@ -418,7 +429,7 @@ export const DEFAULT_SETTINGS: CheckSettings = {
     viewRateMin: 0.15,
     minImpressions: 1_000,
     quartileDropoffMax: 0.6,
-    viewThroughSharePct: 30,
+    viewThroughSharePct: 20,
     cpvBandMinUsd: 0.01,
     cpvBandMaxUsd: 0.03,
   },
@@ -523,6 +534,7 @@ export const SETTING_RULES: {
   bidding: {
     targetCpaMinConv30d: count(1, CONV_MAX),
     targetRoasMinConv30d: count(1, CONV_MAX),
+    valueBiddingMinConv30d: count(1, CONV_MAX),
     lowUtilisation: frac(),
     lowUtilisationMinSpendUsd: usd(100_000),
     lostIsBudgetPct: pct,

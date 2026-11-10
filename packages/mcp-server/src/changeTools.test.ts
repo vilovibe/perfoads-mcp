@@ -1222,6 +1222,6 @@ describe("Google's own suggestions are not a change type", () => {
 
 describe("value bidding: one conversion minimum for the advice and the change", () => {
   it("BB14's bar (checks settings) equals update_bidding's refusal bar", () => {
-    expect(VALUE_BIDDING_MIN_CONV_30D).toBe(DEFAULT_SETTINGS.bidding.targetRoasMinConv30d);
+    expect(VALUE_BIDDING_MIN_CONV_30D).toBe(DEFAULT_SETTINGS.bidding.valueBiddingMinConv30d);
   });
 });

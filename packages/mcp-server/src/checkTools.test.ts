@@ -33,6 +33,8 @@ import {
   REASON_CHARS,
   reasonLeftOut,
   shortReason,
+  spendInPeriodOf,
+  spendLineOf,
   suppressedOf,
   textReason,
   TR03_ENTITIES,
@@ -260,6 +262,7 @@ const EXPECTED: Record<string, string> = {
   AS09: "clean",
   AS10: "info",
   AS13: "not_run",
+  AS24: "not_run",
   AS14: "clean",
   AS15: "not_run",
   AS16: "clean",
@@ -309,6 +312,7 @@ const EXPECTED: Record<string, string> = {
   SK32: "finding",
   SK33: "clean",
   SK35: "info",
+  SK42: "not_run", // M18 fix round: an AI judgement, never a code verdict in the connector
   // wave 2
   PX01: "not_run",
   PX02: "not_run",
@@ -382,6 +386,11 @@ const EXPECTED: Record<string, string> = {
   SH22: "not_run",
   SH23: "not_run",
   SH24: "not_run",
+  // M15 Merchant Center feed checks: their product details are not in the Google Ads API
+  SH26: "not_run",
+  SH27: "not_run",
+  SH28: "not_run",
+  SH29: "not_run",
   SL03: "not_run",
   SL11: "not_run",
   SL12: "not_run",
@@ -726,12 +735,17 @@ describe("run_checks", () => {
     const { out, res } = await run(client, { snapshot_id: snap.snapshotId });
     expect(out.counts.checks).toBe(Object.keys(EXPECTED).length);
     expect(statusById(out)).toEqual(EXPECTED);
-    // R14: the priced spend, summed and counted once, rides on every page
-    const money = (out as unknown as { pricedMoney: Record<string, unknown> }).pricedMoney;
-    expect(Object.keys(money).sort()).toEqual(
-      ["currency", "findings", "monthly", "monthlyCountedOnce", "overlapping"].sort(),
+    // no guessed money: real spend read in the period, with its dates, rides on every page
+    const o = out as unknown as Record<string, unknown>;
+    expect(o.pricedMoney).toBeUndefined();
+    const spend = o.spendInPeriod as Record<string, unknown>;
+    expect(Object.keys(spend).sort()).toEqual(["amount", "currency", "end", "start"]);
+    expect(Number(spend.amount)).toBeGreaterThan(0);
+    expect(spend.start).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(textOf(res)).toMatch(
+      /Spend read in the period: [\d.]+[^\n]*, \d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}\./,
     );
-    expect(Number(money.monthlyCountedOnce)).toBeLessThanOrEqual(Number(money.monthly));
+    expect(textOf(res)).not.toMatch(/per month|Priced spend/);
     expect(notRunReason(out, "BB15")).toMatch(/brand/);
     expect(textOf(res)).toMatch(/BB15[^\n]*: \{"untrusted":"[^\n]*brand/);
     // every not-run check says why in plain words, in its group
@@ -745,11 +759,11 @@ describe("run_checks", () => {
     for (const g of informative)
       expect(g.ids.filter((id) => !g.reasons.some((x) => x.ids.includes(id)))).toEqual([]);
     // the Merchant Center checks: one summary line, not one not-run entry each
-    const mcIds = ["SH02", "SH08", "SH09", "SH15", "SH22"];
+    const mcIds = ["SH02", "SH08", "SH09", "SH15", "SH22", "SH26"];
     expect([...out.checks.merchantCenterOnly].sort()).toEqual(mcIds);
     expect(notRunIds(out).filter((id) => mcIds.includes(id))).toEqual([]);
     expect(textOf(res)).toContain(
-      "5 checks need Merchant Center data, which this server doesn't read (",
+      "6 checks need Merchant Center data, which this server doesn't read (",
     );
     // the sections a Search account does not run (no Shopping, video, Local Services, Demand
     // Gen) were not read: their checks say "not present", never our gap and never clean
@@ -934,7 +948,7 @@ describe("run_checks", () => {
     expect(notRunIds(first).length + first.checks.merchantCenterOnly.length).toBe(
       first.counts.notRun,
     );
-    // its 9 findings took 8 pages when every page repeated the lists; with 162 checks the
+    // its 9 findings took 8 pages when every page repeated the lists; with 168 checks the
     // not-run list (ids always kept) leaves room for 7 of them on the first page (8 before
     // evidence carried plain words next to the metric id)
     expect(sizes.length).toBeLessThanOrEqual(2);
@@ -1061,6 +1075,30 @@ describe("run_checks", () => {
   });
 });
 
+describe("spend in the period", () => {
+  const snap = {
+    account: { currency_code: "EUR" },
+    date_ranges: { performance: { start_date: "2026-08-01", end_date: "2026-10-30" } },
+  } as never;
+
+  it("no campaign cost read (the spend read failed): not read, never 0, in data and text", () => {
+    const spend = spendInPeriodOf(snap, [{ cost: undefined }, {}, { cost: null }]);
+    expect(spend.amount).toBeNull();
+    expect(spendLineOf(spend)).toBe("Spend in the period: not read, 2026-08-01 to 2026-10-30.");
+    expect(spendInPeriodOf(snap, undefined).amount).toBeNull();
+  });
+
+  it("costs read: summed, with the dates; an empty list read fine is a real 0 (no line)", () => {
+    const spend = spendInPeriodOf(snap, [{ cost: 10.105 }, { cost: 5 }, {}]);
+    expect(spend.amount).toBe(15.11);
+    expect(spendLineOf(spend)).toBe(
+      "Spend read in the period: 15.11 EUR, 2026-08-01 to 2026-10-30.",
+    );
+    expect(spendInPeriodOf(snap, []).amount).toBe(0);
+    expect(spendLineOf(spendInPeriodOf(snap, []))).toBeNull();
+  });
+});
+
 describe("finding summary", () => {
   it("R17: a finding's own label wins over its check's title, in both detail levels", () => {
     const f = {
@@ -1077,6 +1115,43 @@ describe("finding summary", () => {
     const titles = new Map([["SK20", "a landing page performs materially below the account"]]);
     expect(findingOf(f, titles).title).toMatch(/returns materially less per \$1/);
     expect(compactFindingOf(f, titles).title).toMatch(/returns materially less per \$1/);
+  });
+
+  it("two findings pricing one campaign: no guessed monthly money in either detail level", () => {
+    // what the engine's money-counted-once step writes on SH04 and TR01 on one campaign
+    const on = (checkId: string, shared: number, once: number) =>
+      ({
+        checkId,
+        claimKey: "x",
+        scope: { type: "campaign", id: "8", name: "Shoes search", campaignId: "8" },
+        evidence: [
+          { key: "C.spend", value: 2901, unit: "money" },
+          { key: "shared_money_monthly", value: shared, unit: "money" },
+        ],
+        facts: {
+          spend_90d: 2901,
+          overlaps_with: [checkId === "SH04" ? "TR01" : "SH04"],
+          shared_money_monthly: shared,
+          counted_once_monthly: once,
+          overlap_note: `${checkId} prices 317.93 a month of product money inside it, so the total counts it once, under TR01`,
+        },
+        impact: { quantified: true, value: 317.93 },
+        severity: { severity: "warning" },
+        confidence: { level: "moderate" },
+      }) as never;
+    const titles = new Map<string, string>();
+    for (const f of [on("SH04", 317.93, 0), on("TR01", 0, 507.25)]) {
+      for (const out of [findingOf(f, titles, true), compactFindingOf(f, titles, true)]) {
+        const json = JSON.stringify(out);
+        for (const key of ["shared_money_monthly", "counted_once_monthly", "overlap_note"])
+          expect(json).not.toContain(key);
+        expect(json).not.toMatch(/a month/);
+        expect(json).not.toContain("317.93");
+      }
+      // the real spend and which findings overlap still show
+      expect((findingOf(f, titles).facts as Record<string, unknown>).spend_90d).toBe(2901);
+      expect(JSON.stringify(findingOf(f, titles).facts)).toContain("overlaps_with");
+    }
   });
 
   it("names what a list finding found: the first 10, wrapped, then how many more", () => {
@@ -1194,8 +1269,9 @@ describe("finding summary", () => {
     expect(JSON.stringify(f)).not.toMatch(new RegExp(`"${EVIL}":`));
     expect(f.facts).toEqual({ term: { untrusted: EVIL }, cost: 5 });
     expect(f.scope.campaignId).toBe("11");
-    expect(f.monthlyImpact).toBe(40);
-    expect(f.monthlyImpactKind).toBe("waste");
+    // no guessed money on a finding, even when the engine priced it
+    expect(f).not.toHaveProperty("monthlyImpact");
+    expect(f).not.toHaveProperty("monthlyImpactKind");
   });
 
   it("shows each measure once and metric ids inside values as plain words", () => {
@@ -1286,6 +1362,7 @@ describe("resources and prompt", () => {
       "SH08",
       "SH09",
       "SH22",
+      "SH26",
       "SH15",
     ]);
   });
@@ -1337,8 +1414,16 @@ describe("resources and prompt", () => {
     expect(text).toMatch(/Then EVERY finding, grouped by area in this order: Tracking, /);
     expect(text).toMatch(/Never drop a finding, never main points only/);
     expect(text).toMatch(
-      /critical = Urgent, warning = Important, opportunity = Minor, info = Note; positive is not a problem, it goes under Good news/,
+      /critical = Urgent, warning = This week, opportunity or info = Just so you know; positive is not a problem, it goes under Good news/,
     );
+    // M11: one set of warning words (the app's table), the old set is gone
+    expect(text).not.toMatch(/Important|Minor|= Note/);
+    // M11: sorted by real spend, never by a priced or forecast figure
+    expect(text).toMatch(
+      /"Summary": 5-8 bullets, the problems on the most real spend first \(spend measured in the period, never a priced or forecast figure\)/,
+    );
+    expect(text).toMatch(/Most severe first inside each area, then the most real spend first\./);
+    expect(text).not.toMatch(/biggest money/);
     // spend and return come from the account overview for the snapshot's period
     expect(text).toMatch(
       /3\. Call get_account_overview with .*dateRanges\.performance.*never estimate/,
@@ -1720,7 +1805,7 @@ describe("TR03 info line counts and names (N10)", () => {
             { entity: { id: "32", name: "Video DG B" }, cells: {} },
           ],
         ),
-        tr03({ changes_on: "campaign", changes: 8 }, campaign("1", "PMax Belts")),
+        tr03({ changes_on: "campaign", changes: 8 }, campaign("1", "PMax Mugs")),
       ],
       snap,
       new Set(),
@@ -1785,14 +1870,14 @@ describe("info at scale", () => {
 });
 
 describe("run_checks: findings first, and detail compact", () => {
-  /** 75 findings: the wave-3 account (53) plus 22 wasted keywords. */
+  /** 75 findings: the wave-3 account (49; M13: 4 campaigns are under the 30 / 50 target bars, so 4 fewer BB06) plus 26 wasted keywords. */
   const big = () =>
     fixtureRouter({
       campaignName: EVIL,
       wastedTerm: EVIL,
       pmax: true,
       wave3: true,
-      extraWastedKeywords: 22,
+      extraWastedKeywords: 26,
     });
   const sizeOf = (res: Awaited<ReturnType<typeof run>>["res"]) =>
     Buffer.byteLength(JSON.stringify(res.structuredContent)) + Buffer.byteLength(textOf(res));
@@ -1843,16 +1928,7 @@ describe("run_checks: findings first, and detail compact", () => {
     expect((first.out as unknown as { detail: string }).detail).toBe("compact");
     for (const f of first.out.findings as unknown as Record<string, unknown>[]) {
       expect(Object.keys(f).sort()).toEqual(
-        [
-          "campaignName",
-          "checkId",
-          "evidence",
-          "monthlyImpact",
-          "monthlyImpactKind",
-          "scopeName",
-          "severity",
-          "title",
-        ].sort(),
+        ["campaignName", "checkId", "evidence", "scopeName", "severity", "title"].sort(),
       );
       expect((f.evidence as unknown[]).length).toBeLessThanOrEqual(COMPACT_EVIDENCE);
     }
@@ -1860,13 +1936,8 @@ describe("run_checks: findings first, and detail compact", () => {
     expect(bareStrings(first.res.structuredContent).join(" ")).not.toContain(EVIL);
     expect(outsideMarkers(textOf(first.res))).not.toContain(EVIL);
     expect(textOf(first.res)).toMatch(/\n {2}Evidence: [^\n]+ \d/);
-    // the money says what it is
-    expect(textOf(first.res)).toMatch(/, about \d+ per month (wasted|at risk|to gain)/);
-    const priced = (first.out.findings as unknown as Record<string, unknown>[]).filter(
-      (f) => f.monthlyImpact !== null,
-    );
-    expect(priced.length).toBeGreaterThan(0);
-    for (const f of priced) expect(["waste", "at_risk", "gain"]).toContain(f.monthlyImpactKind);
+    // no guessed money in the text
+    expect(textOf(first.res)).not.toMatch(/per month|Priced spend|at risk|to gain/);
     // the lists still come, after the last finding
     expect(out.checks.clean.length).toBeGreaterThan(0);
   });

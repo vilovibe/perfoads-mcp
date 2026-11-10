@@ -12,7 +12,7 @@ import { ACCOUNT_DATA_ARRAY_KEYS } from "./engine/shared/input.js";
 import { DEFAULT_SETTINGS, SETTING_RULES, validateSettings } from "./engine/settings.js";
 import { adGroup, buildInput, keyword, RUN_DATE, searchTerm } from "./testing/account.js";
 
-const CHECKS = 162;
+const CHECKS = 168; // +SH26-SH29 (M15); +AS24, +SK42 (M18)
 const outcome = (r: ReturnType<typeof runChecks>, id: string) => r.checks.find((c) => c.id === id);
 
 /** Deterministic pseudo-random numbers (mulberry32). */
@@ -386,7 +386,7 @@ describe("settings validation", () => {
   });
   it("floors are overridable: a shorter learning age lets a 9-day campaign be judged", () => {
     const input = buildInput({
-      campaigns: [{ id: "11", strategy: "MAXIMIZE_CONVERSION_VALUE", conv: 5, days: 9 }],
+      campaigns: [{ id: "11", strategy: "MAXIMIZE_CONVERSION_VALUE", conv: 6, days: 9 }],
     });
     expect(outcome(runChecks(input), "BB06")?.status).toBe("suppressed");
     expect(

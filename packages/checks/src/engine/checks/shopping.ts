@@ -2,7 +2,7 @@
 // Copyright 2026 Paweł Wilk
 
 /**
- * Shopping and feed: SH01-SH11, SH22-SH24. SH12 lives in crossTree.ts and
+ * Shopping and feed: SH01-SH11, SH22-SH24, SH26-SH29. SH12 lives in crossTree.ts and
  * SH13-SH21 in carriedIn.ts.
  *
  * Products come from Google Ads' own product list (each product's status, labels
@@ -2007,6 +2007,182 @@ const SH24 = defineCheck({
   },
 });
 
+// ---------------------------------------------------------------------------
+// SH26-SH29 (M15) — store factors, photos, identifiers, highlights
+// ---------------------------------------------------------------------------
+
+/** M15: the seller-ratings bar Google states: 100 reviews in 12 months, 3.5 stars on average. */
+export const SELLER_RATING_MIN_REVIEWS = 100;
+export const SELLER_RATING_MIN_STARS = 3.5;
+/** M15 (F128-B3): whether a store's reviews meet Google's seller-ratings bar. Pure. */
+export function meetsSellerRatingBar(reviews: number, stars: number): boolean {
+  return reviews >= SELLER_RATING_MIN_REVIEWS && stars >= SELLER_RATING_MIN_STARS;
+}
+/** M15: the reviews to-do, said wherever store ratings come up (no API serves them). */
+export const SELLER_RATINGS_TODO =
+  `Seller ratings show once your store has ${SELLER_RATING_MIN_REVIEWS}+ reviews from the last 12 months averaging ${SELLER_RATING_MIN_STARS}+ stars. ` +
+  "Google Customer Reviews (free, set up in Merchant Center) collects them. Product ratings are a separate Merchant Center program: turn it on and connect your review app so star ratings show on your products. " +
+  "Check the store quality page in Merchant Center yourself as well.";
+
+/** M15: the account scope of SH28's product-type part, named as in the app so the two compare. */
+const SH28_PRODUCT_TYPE_SCOPE: CheckScope = {
+  type: "account",
+  id: null,
+  name: "Products: no product type",
+};
+
+const SH26 = defineCheck({
+  id: "SH26",
+  claimKey: CLAIM_KEYS.FEED_STORE_RANKING_FACTOR,
+  title:
+    "Merchant Center store factors that hold Shopping listings back (handling, delivery time, return cost)",
+  clientLabel: "shipping speed and return cost in Merchant Center",
+  group: "shopping",
+  metrics: ["F.shipping_services", "F.return_policies"],
+  confounders: [],
+  requires: ["mcShippingSettings"],
+  impactFormula: "IMP_NONE",
+  run(ctx: CheckCtx): CheckResult {
+    const g = merchantCenterGate(ctx, ["mcShippingSettings"]);
+    if (g) return g;
+    // a source that carries the shipping tables still has no handling / transit times or return fees here
+    return {
+      state: "not_checkable",
+      reason: `handling and transit times and return shipping fees are Merchant Center data this server does not read. ${SELLER_RATINGS_TODO}`,
+      table: "mcShippingSettings",
+      category: "our_gap",
+    };
+  },
+});
+
+const SH27 = defineCheck({
+  id: "SH27",
+  claimKey: CLAIM_KEYS.PRODUCT_PHOTOS_FEW,
+  title: "top-selling products have fewer than 3 photos",
+  clientLabel: "photos on your best sellers",
+  group: "shopping",
+  metrics: [],
+  confounders: ["SH15"],
+  requires: ["products"],
+  impactFormula: "IMP_NONE",
+  run(ctx: CheckCtx): CheckResult {
+    const g = gateOnData(ctx, ["products"]);
+    if (g) return g;
+    if (feedProducts(ctx).length === 0) return NO_PRODUCTS;
+    return {
+      state: "not_checkable",
+      reason:
+        "the Google Ads API does not return how many photos a product has (additional images are Merchant Center data)",
+      table: "products",
+      category: "google_withholds",
+    };
+  },
+});
+
+const SH28 = defineCheck({
+  id: "SH28",
+  claimKey: CLAIM_KEYS.PRODUCT_IDENTIFIERS_MISSING,
+  // only the product type is read here: the title and label never claim barcodes were checked
+  // (a "clean" SH28 must not read as "no barcode problems"; the app's SH28 also judges GTIN / MPN)
+  title:
+    "products with no product type (barcodes not checked: GTIN, MPN and identifier_exists are Merchant Center data)",
+  clientLabel: "products with no product type in your feed",
+  group: "shopping",
+  metrics: [],
+  confounders: ["SH15"],
+  requires: ["products"],
+  impactFormula: "IMP_NONE",
+  noneFoundMeans: "Every product in Google Ads' copy of your product list has a product type.",
+  run(ctx: CheckCtx): CheckResult {
+    const g = gateOnData(ctx, ["products"]);
+    if (g) return g;
+    const all = feedProducts(ctx);
+    if (all.length === 0) return NO_PRODUCTS;
+    // the product type comes from Google Ads' own product list; a product with no row there was not read
+    const products = all.filter((p) => p.attrs.inFeed !== false);
+    if (products.length === 0)
+      return {
+        state: "not_checkable",
+        reason: "no product had a row in Google Ads' product list, so no product type was read",
+        table: "products",
+        category: "our_gap",
+      };
+    const limits = [
+      "Not checked: barcodes. GTIN, MPN and identifier_exists are Merchant Center attributes the Google Ads API does not return.",
+      'Whether the brand on third-party goods is your store name (the Shopify "Vendor") was not judged: nothing we read tells your own products from resold ones.',
+      ...(products.length < all.length
+        ? [
+            `${all.length - products.length} of the ${all.length} products had no row in Google Ads' product list, so they are not counted.`,
+          ]
+        : []),
+    ];
+    const noType = products.filter((p) => !p.attrs.productType);
+    if (noType.length === 0)
+      return {
+        state: "none_found",
+        population: products.length,
+        note: `${products.length} products judged for product type, none missing. ${limits.join(" ")}`,
+      };
+    const sorted = [...noType].sort(
+      (a, b) =>
+        (b.windows.m90.value ?? 0) - (a.windows.m90.value ?? 0) ||
+        (b.windows.m90.cost ?? 0) - (a.windows.m90.cost ?? 0) ||
+        a.id.localeCompare(b.id),
+    );
+    return {
+      state: "fires",
+      findings: [
+        {
+          ...finding({
+            claimKey: CLAIM_KEYS.PRODUCT_IDENTIFIERS_MISSING,
+            scope: SH28_PRODUCT_TYPE_SCOPE,
+            cite: [],
+            facts: {
+              part: "product_type",
+              products_no_product_type: noType.length,
+              products_read: products.length,
+            },
+            population: products.length,
+            rows: sorted.slice(0, LIST_ROWS).map((p) => ({
+              entity: { id: p.id, name: p.attrs.title ?? p.id },
+              cells: {
+                product_type: "none",
+                sales_90d: Number((p.windows.m90.value ?? 0).toFixed(2)),
+                spend_90d: Number((p.windows.m90.cost ?? 0).toFixed(2)),
+              },
+            })),
+          }),
+          ...limitOf(limits),
+        },
+      ],
+    };
+  },
+});
+
+const SH29 = defineCheck({
+  id: "SH29",
+  claimKey: CLAIM_KEYS.PRODUCT_HIGHLIGHTS_MISSING,
+  title: "top-selling products have no product highlights or product details",
+  clientLabel: "highlights and details on your best sellers",
+  group: "shopping",
+  metrics: [],
+  confounders: ["SH15"],
+  requires: ["products"],
+  impactFormula: "IMP_NONE",
+  run(ctx: CheckCtx): CheckResult {
+    const g = gateOnData(ctx, ["products"]);
+    if (g) return g;
+    if (feedProducts(ctx).length === 0) return NO_PRODUCTS;
+    return {
+      state: "not_checkable",
+      reason:
+        "the Google Ads API does not return product highlights or product details (they are Merchant Center data)",
+      table: "products",
+      category: "google_withholds",
+    };
+  },
+});
+
 export const SHOPPING_CHECKS: CheckDefinition[] = [
   SH01,
   SH02,
@@ -2021,4 +2197,8 @@ export const SHOPPING_CHECKS: CheckDefinition[] = [
   SH22,
   SH23,
   SH24,
+  SH26,
+  SH27,
+  SH28,
+  SH29,
 ];

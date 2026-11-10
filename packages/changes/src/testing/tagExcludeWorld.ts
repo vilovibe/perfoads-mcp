@@ -45,7 +45,7 @@ const cl = (index: number, value?: string): Obj => ({
 export const shopCampaigns = (): FakeCampaign[] => [
   {
     id: "101",
-    name: "Demo - PMAX - Belts",
+    name: "Demo - PMAX - Mugs",
     type: "PERFORMANCE_MAX",
     status: "ENABLED",
     merchantId: MID,
@@ -137,13 +137,13 @@ export const shopProducts = (): FakeProduct[] => [
   },
   {
     offerId: "demo_US_3_1",
-    base: ["seller_2026", "belts", "high_margin", "core", "in_stock"],
-    types: ["belts", "women"],
+    base: ["seller_2026", "mugs", "high_margin", "core", "in_stock"],
+    types: ["mugs", "women"],
   },
   {
     offerId: "demo_US_4_1",
-    base: ["hero", "belts", "high_margin", "core", "in_stock"],
-    types: ["belts", "hero"],
+    base: ["hero", "mugs", "high_margin", "core", "in_stock"],
+    types: ["mugs", "hero"],
   },
   {
     offerId: "demo_US_5_1",

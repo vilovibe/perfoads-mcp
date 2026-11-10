@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "com.perfoads/mcp",
   "title": "PerfoAds MCP",
-  "description": "Checks your Google Ads accounts (162 checks) and changes them only after you approve. Self-hosted.",
+  "description": "Checks your Google Ads accounts (168 checks) and changes them only after you approve. Self-hosted.",
   "websiteUrl": "https://perfoads.com/?utm_source=mcp-registry",
   "repository": {
     "url": "https://github.com/vilovibe/perfoads-mcp",

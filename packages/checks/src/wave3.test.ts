@@ -10,6 +10,7 @@ import { runChecks, type EvidenceInput } from "./api.js";
 import type { CheckResult } from "./engine/checks/types.js";
 import type { Row } from "./engine/shared/input.js";
 import { siteLanguageOf } from "./engine/checks/slices.js";
+import { meetsSellerRatingBar, SHOPPING_CHECKS } from "./engine/checks/shopping.js";
 import { catalogItemsOf, includedByListingTree } from "./engine/model/productCatalog.js";
 import { checkCtxOf, runOne } from "./testing/account.js";
 import {
@@ -368,6 +369,39 @@ describe("SH06 / SH13 need Merchant Center attributes (size, GTIN, colour)", () 
   });
 });
 
+describe("SH06 when Merchant Center attributes are on the rows (app twin, M15 fix round 2)", () => {
+  const withMc = (rows: Row[]): EvidenceInput => {
+    const input = shoppingAccount();
+    const data = input.data as unknown as { products: Row[] };
+    data.products = rows.map((r, i) => ({ ...data.products[i], mc_status: "approved", ...r }));
+    return input;
+  };
+  const decor = "Home & Garden > Decor";
+  it("a handmade item with an MPN, identifier_exists = no and a candle with no colour / size miss nothing", () => {
+    const input = withMc([
+      { gtin: null, mpn: "HM-100", google_product_category: decor },
+      { gtin: null, identifier_exists: "no", google_product_category: decor },
+      { gtin: "0123456789012", google_product_category: `${decor} > Home Fragrances > Candles` },
+    ]);
+    const products = checkCtxOf(input).model.children.products.filter((p) => p.attrs.mcStatus);
+    expect(products.map((p) => p.attrs.missingAttrs)).toEqual([[], [], []]);
+    expect(state(runOne("SH06", input))).toBe("none_found");
+  });
+  it("clothing with no size is a finding; no GTIN, no MPN, identifier_exists unset is still a missing GTIN", () => {
+    const input = withMc([
+      {
+        gtin: "0123456789013",
+        color: "black",
+        google_product_category: "Apparel & Accessories > Clothing",
+      },
+      { gtin: null, google_product_category: decor },
+    ]);
+    const products = checkCtxOf(input).model.children.products.filter((p) => p.attrs.mcStatus);
+    expect(products.map((p) => p.attrs.missingAttrs)).toEqual([["size"], ["gtin"]]);
+    expect(state(runOne("SH06", input))).toBe("fires");
+  });
+});
+
 describe("SH10 two Shopping campaigns at the same priority", () => {
   it("fires on two campaigns with the same feed label and priority", () => {
     const r = runOne("SH10", shoppingAccount({ secondShopping: true }));
@@ -437,6 +471,61 @@ describe("SH24 store quality", () => {
   });
 });
 
+describe("SH26-SH29 (M15) Merchant Center feed checks", () => {
+  it("SH26 store factors are not run: they are Merchant Center data; sale price is not a factor", () => {
+    const r = runOne("SH26", shoppingAccount());
+    expect(r).toMatchObject({ state: "not_checkable", category: "our_gap" });
+    expect((r as Extract<CheckResult, { state: "not_checkable" }>).reason).not.toMatch(/sale/i);
+    const def = SHOPPING_CHECKS.find((c) => c.id === "SH26");
+    expect(`${def?.title} ${def?.clientLabel}`).not.toMatch(/sale/i);
+  });
+  it("SH27 photos and SH29 highlights are not run: the Google Ads API does not return them", () => {
+    expect(runOne("SH27", shoppingAccount())).toMatchObject({
+      state: "not_checkable",
+      category: "google_withholds",
+    });
+    expect(runOne("SH29", shoppingAccount())).toMatchObject({
+      state: "not_checkable",
+      category: "google_withholds",
+    });
+  });
+  it("SH28 is clean when every product has a product type; barcodes are 'not checked', never part of the clean claim", () => {
+    const r = runOne("SH28", shoppingAccount());
+    expect(state(r)).toBe("none_found");
+    expect((r as Extract<CheckResult, { state: "none_found" }>).note).toMatch(
+      /Not checked: barcodes/,
+    );
+    // the clean list names the check by its title / label: neither may say barcodes were looked at
+    const def = SHOPPING_CHECKS.find((c) => c.id === "SH28");
+    expect(def?.clientLabel).toBe("products with no product type in your feed");
+    expect(def?.title).toMatch(/barcodes not checked/);
+    expect(def?.noneFoundMeans).not.toMatch(/barcode|GTIN/i);
+  });
+  it("SH28 fires on products with no product type, biggest seller first", () => {
+    const products = PRODUCTS.map((p) =>
+      p.id === "sku-2" || p.id === "sku-4" ? { ...p, productType: null } : p,
+    );
+    const [f] = findingsOf(runOne("SH28", shoppingAccount({ products })));
+    if (!f) throw new Error("SH28 did not fire");
+    expect(f.facts).toMatchObject({
+      part: "product_type",
+      products_no_product_type: 2,
+      products_read: 6,
+    });
+    expect(f.rows?.map((x) => x.entity.id)).toEqual(["sku-2", "sku-4"]);
+    expect(f.scope.name).toBe("Products: no product type");
+  });
+});
+
+describe("B3 seller ratings bar (M15)", () => {
+  it("99 vs 100 reviews, 3.4 vs 3.5 stars", () => {
+    expect(meetsSellerRatingBar(99, 4.8)).toBe(false);
+    expect(meetsSellerRatingBar(100, 4.8)).toBe(true);
+    expect(meetsSellerRatingBar(500, 3.4)).toBe(false);
+    expect(meetsSellerRatingBar(500, 3.5)).toBe(true);
+  });
+});
+
 describe("SH14 custom labels", () => {
   it("fires when most products carry no label", () => {
     const products = PRODUCTS.map((p) => ({ ...p, labels: [null] }));
@@ -494,12 +583,12 @@ describe("SH19 an included product that never served", () => {
 });
 
 describe("SK20 product pages a product check already prices (R17)", () => {
-  // a gold belt size with 60 clicks and no sale (SH20 prices it), its page judged on value
+  // a gold mug size with 60 clicks and no sale (SH20 prices it), its page judged on value
   const products = [
     ...PRODUCTS,
     {
       id: "shopify_us_871_87101",
-      title: "Gold belt Luxe wide metallic - Gold, 4 cm",
+      title: "Gold mug Nova wide metallic - Gold, 4 cm",
       cost: 100,
       clicks: 60,
       conv: 0,
@@ -507,7 +596,7 @@ describe("SK20 product pages a product check already prices (R17)", () => {
     },
     {
       id: "shopify_us_871_87102",
-      title: "Gold belt Luxe wide metallic - Silver, 3 cm",
+      title: "Gold mug Nova wide metallic - Silver, 3 cm",
       cost: 50,
       clicks: 20,
       conv: 2,
@@ -533,27 +622,27 @@ describe("SK20 product pages a product check already prices (R17)", () => {
   it("leaves the page out when the product checks price 80%+ of its spend, naming the check", () => {
     // SH20 prices 100 of the page's 120
     const r = runChecks(
-      withPages(["https://example.com/products/gold-belt?variant=87101"], 120, 40),
+      withPages(["https://example.com/products/gold-mug?variant=87101"], 120, 40),
     );
     expect(r.findings.find((x) => x.checkId === "SK20")).toBeUndefined();
     expect(r.findings.find((x) => x.checkId === "SH20")?.impact.quantified).toBe(true);
     const entry = r.checks.find((c) => c.id === "SK20");
     expect(entry?.reason ?? entry?.note).toMatch(
-      /products\/gold-belt left out: SH20 already prices 100 of its 120 spend over 90 days as the product spend of Gold belt Luxe wide metallic(?! -)/,
+      /products\/gold-mug left out: SH20 already prices 100 of its 120 spend over 90 days as the product spend of Gold mug Nova wide metallic(?! -)/,
     );
   });
   it("keeps a page when one priced size is a small part of its spend, marked as overlapping", () => {
     // one size priced at 100 of a 480 page: a page of 8 sizes is not that one size
-    const r = runChecks(withPages(["https://example.com/products/gold-belt?variant=87101"]));
+    const r = runChecks(withPages(["https://example.com/products/gold-mug?variant=87101"]));
     const page = r.findings.find((x) => x.checkId === "SK20");
     expect(page?.impact.quantified).toBe(true);
     expect(page?.facts.overlaps_with).toEqual(["SH20"]);
     expect(page?.facts.product_spend_priced_elsewhere_90d).toBe(100);
-    expect(String(page?.facts.overlap_note)).toContain("Gold belt Luxe wide metallic;");
+    expect(String(page?.facts.overlap_note)).toContain("Gold mug Nova wide metallic;");
     expect(String(page?.facts.overlap_note)).not.toContain("4 cm");
   });
   it("keeps a product page whose product no product check prices", () => {
-    const r = runChecks(withPages(["https://example.com/products/other-belt?variant=87201"]));
+    const r = runChecks(withPages(["https://example.com/products/other-mug?variant=87201"]));
     const page = r.findings.find((x) => x.checkId === "SK20");
     expect(page?.impact.quantified).toBe(true);
     expect(page?.facts.overlaps_with).toBeUndefined();
@@ -572,7 +661,7 @@ describe("SH20 products with clicks and no sale", () => {
   });
   it("B19: priced on exactly the zero-sale sizes (3 products, $395.92 in 90 days)", () => {
     // Jacket sizes S and M sold nothing; the jacket sells in other sizes ($1,217), so no
-    // product waste check prices them. Same for the gold belt.
+    // product waste check prices them. Same for the gold mug.
     const products = [
       ...PRODUCTS,
       {
@@ -599,8 +688,8 @@ describe("SH20 products with clicks and no sale", () => {
         conv: 5,
         value: 1217,
       },
-      { id: "shopify_us_871_1", title: "Gold Belt 85", cost: 100, clicks: 60, conv: 0, value: 0 },
-      { id: "shopify_us_871_2", title: "Gold Belt 90", cost: 50, clicks: 20, conv: 2, value: 300 },
+      { id: "shopify_us_871_1", title: "Gold Mug 85", cost: 100, clicks: 60, conv: 0, value: 0 },
+      { id: "shopify_us_871_2", title: "Gold Mug 90", cost: 50, clicks: 20, conv: 2, value: 300 },
     ];
     const input = shoppingAccount({ products });
     const f = findingsOf(runOne("SH20", input))[0];
@@ -704,6 +793,13 @@ describe("SH12 the same product in a Shopping and a Performance Max campaign", (
   });
   it("is clean when the Shopping campaign sells another feed", () => {
     expect(state(runOne("SH12", shoppingAccount()))).toBe("none_found");
+  });
+  it("M7: a brand Shopping campaign over the PMax products is no finding (non-brand overlap only)", () => {
+    const brand = shoppingAccount({
+      shoppingFeedLabel: "US",
+      campaigns: [{ ...SHOPPING_CAMPAIGN, name: "Shopping - Brand" }, PMAX_CAMPAIGN],
+    });
+    expect(state(runOne("SH12", brand))).toBe("none_found");
   });
   it("B8/N5: counts only items that can show (a live shop: 33 of 5,438 'buyable' was 33 of ~460)", () => {
     // 6 items both campaigns can sell and show, plus 30 sold-out sizes and 4 sizes Google
@@ -1355,8 +1451,8 @@ describe("PX15 the running asset groups leave selling products out", () => {
     expect(f?.facts.selling_products_in_a_feed_this_campaign_does_not_sell).toBe(0);
   });
   // round 2 (NEW-2): the running group takes custom label 1 "jackets" only, and within it
-  // sku-1 and sku-2 by item id; sku-3 and sku-4 are belts (label "belts"), sku-5 a jacket
-  const labelled = (belts: string[]): { products: ProductSpec[]; running: Row[] } => {
+  // sku-1 and sku-2 by item id; sku-3 and sku-4 are mugs (label "mugs"), sku-5 a jacket
+  const labelled = (mugs: string[]): { products: ProductSpec[]; running: Row[] } => {
     const label = (key: object) => JSON.stringify({ productCustomAttribute: key });
     const at = (id: string, type: string, caseValue: string, parent?: string): Row => ({
       asset_group_id: "51",
@@ -1368,7 +1464,7 @@ describe("PX15 the running asset groups leave selling products out", () => {
     return {
       products: PRODUCTS.map((p) => ({
         ...p,
-        labels: ["core", belts.includes(p.id) ? "belts" : "jackets"],
+        labels: ["core", mugs.includes(p.id) ? "mugs" : "jackets"],
       })),
       running: [
         at("10", "SUBDIVISION", "{}"),
@@ -1388,9 +1484,9 @@ describe("PX15 the running asset groups leave selling products out", () => {
     expect(f?.facts.selling_products_left_out).toBe(3);
     expect(f?.facts).not.toHaveProperty("selling_products_outside_running_selection");
   });
-  // running group 51 takes custom label 1 "jackets"; switched-off 52 took "belts", 53 "bags",
+  // running group 51 takes custom label 1 "jackets"; switched-off 52 took "mugs", 53 "bags",
   // on custom label 0 (different label) or custom label 1 (same label)
-  const beltsBags = (offIndex: "INDEX0" | "INDEX1", shownBy?: "41" | "42"): EvidenceInput => {
+  const mugsBags = (offIndex: "INDEX0" | "INDEX1", shownBy?: "41" | "42"): EvidenceInput => {
     const label = (key: object) => JSON.stringify({ productCustomAttribute: key });
     const at = (group: string, id: string, type: string, caseValue: string, parent?: string) => ({
       asset_group_id: group,
@@ -1404,14 +1500,14 @@ describe("PX15 the running asset groups leave selling products out", () => {
       at(group, `${n + 1}`, "UNIT_INCLUDED", label({ index, value }), `${n}`),
       at(group, `${n + 2}`, "UNIT_EXCLUDED", label({ index }), `${n}`),
     ];
-    const kind: Record<string, string> = { "sku-3": "belts", "sku-4": "belts", "sku-5": "bags" };
+    const kind: Record<string, string> = { "sku-3": "mugs", "sku-4": "mugs", "sku-5": "bags" };
     const base = three(["ENABLED", "PAUSED", "PAUSED"], false, {
       products: PRODUCTS.map((p) => {
         const k = kind[p.id] ?? "jackets";
         return { ...p, labels: offIndex === "INDEX0" ? [k, k] : ["core", k] };
       }),
       running: byLabel("51", 10, "INDEX1", "jackets"),
-      off: [...byLabel("52", 30, offIndex, "belts"), ...byLabel("53", 50, offIndex, "bags")],
+      off: [...byLabel("52", 30, offIndex, "mugs"), ...byLabel("53", 50, offIndex, "bags")],
     });
     if (!shownBy) return base;
     // a second live Performance Max campaign "42" with no tree for them showed them in the window
@@ -1449,23 +1545,23 @@ describe("PX15 the running asset groups leave selling products out", () => {
       },
     };
   };
-  it("round 2 review: switched-off groups picked them by a DIFFERENT label (cl0 belts, bags) than the running one (cl1 jackets) = left out", () => {
-    const f = findingsOf(runOne("PX15", beltsBags("INDEX0")))[0];
+  it("round 2 review: switched-off groups picked them by a DIFFERENT label (cl0 mugs, bags) than the running one (cl1 jackets) = left out", () => {
+    const f = findingsOf(runOne("PX15", mugsBags("INDEX0")))[0];
     expect(f?.rows?.map((x) => x.entity.id).sort()).toEqual(["sku-3", "sku-4", "sku-5"]);
     expect(f?.facts.selling_products_left_out).toBe(3);
   });
-  it("round 2 review: switched-off groups picked them by the SAME label (cl1 belts, bags) = left out", () => {
-    const f = findingsOf(runOne("PX15", beltsBags("INDEX1")))[0];
+  it("round 2 review: switched-off groups picked them by the SAME label (cl1 mugs, bags) = left out", () => {
+    const f = findingsOf(runOne("PX15", mugsBags("INDEX1")))[0];
     expect(f?.rows?.map((x) => x.entity.id).sort()).toEqual(["sku-3", "sku-4", "sku-5"]);
   });
   it("round 2 review: another live Performance Max campaign showed them in the last 7 days = covered, clean, fact only in the note", () => {
-    const r = runOne("PX15", beltsBags("INDEX0", "42"));
+    const r = runOne("PX15", mugsBags("INDEX0", "42"));
     expect(state(r)).toBe("none_found");
     const note = r.state === "none_found" ? (r.note ?? "") : "";
     expect(note).toMatch(/3 selling product\(s\) through another live campaign/);
     expect(note).not.toMatch(/by choice|outside what the running groups select/);
     // the campaign's own rows are not cover
-    expect(state(runOne("PX15", beltsBags("INDEX0", "41")))).toBe("fires");
+    expect(state(runOne("PX15", mugsBags("INDEX0", "41")))).toBe("fires");
   });
   it("is not run when the product list was cut", () => {
     expect(runOne("PX15", three(["ENABLED", "PAUSED", "PAUSED"], true))).toMatchObject({
@@ -1857,6 +1953,17 @@ describe("Video (VD01-VD07)", () => {
     expect(state(runOne("VD04", videoAccount({ viewThrough: { vt: 15, conv: 5 } })))).toBe("fires");
     expect(state(runOne("VD04", videoAccount()))).toBe("none_found");
   });
+  it("VD04 uses the app's 20% bar: 25% fires, 20% exactly fires, under 20% is clean", () => {
+    expect(state(runOne("VD04", videoAccount({ viewThrough: { vt: 25, conv: 75 } })))).toBe(
+      "fires",
+    );
+    expect(state(runOne("VD04", videoAccount({ viewThrough: { vt: 20, conv: 80 } })))).toBe(
+      "fires",
+    );
+    expect(state(runOne("VD04", videoAccount({ viewThrough: { vt: 19, conv: 81 } })))).toBe(
+      "none_found",
+    );
+  });
   it("VD07 fires outside the cost-per-view band, either side", () => {
     expect(findingsOf(runOne("VD07", videoAccount({ cpv: 0.09 })))[0]?.facts.side).toBe("above");
     expect(findingsOf(runOne("VD07", videoAccount({ cpv: 0.002 })))[0]?.facts.side).toBe("below");
@@ -2027,3 +2134,4 @@ describe("wave 3 settings", () => {
     expect(runChecks(input).warnings.filter((w) => w.startsWith("settings"))).toEqual([]);
   });
 });
+

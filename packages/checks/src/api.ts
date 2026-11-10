@@ -404,10 +404,15 @@ const CHECK_SETTINGS: Readonly<Record<string, readonly string[]>> = {
     "bidding.chokingUtilBelow",
     "bidding.chokingMinDailyBudgetUsd",
   ],
-  BB06: [...LEARNING, "bidding.targetRoasMinConv30d"],
+  BB06: [
+    ...LEARNING,
+    "bidding.targetCpaMinConv30d",
+    "bidding.targetRoasMinConv30d",
+    "bidding.valueBiddingMinConv30d",
+  ],
   BB07: [...LEARNING, "bidding.scaleUtilMin", "bidding.scaleLostIsBudgetPct", "floors.strongConv"],
   BB09: ["bidding.modifierMinStep", "bidding.modifierGapMultiple"],
-  BB14: ["floors.strongConv", "bidding.targetRoasMinConv30d"],
+  BB14: ["floors.strongConv", "bidding.valueBiddingMinConv30d"],
   BB15: [
     "bidding.brandCpcFloorUsd",
     "bidding.brandCpcShareOfNonBrand",

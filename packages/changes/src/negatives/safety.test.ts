@@ -27,7 +27,7 @@ describe("negativeBlocks (stricter than Google: the safe side)", () => {
     expect(negativeBlocks({ text: "cheap", matchType: "BROAD" }, "cheaper shoes")).toBe(false);
   });
   it("folds plurals the same way on both sides", () => {
-    expect(stemsOf("Dresses and Belts")).toEqual(["dress", "and", "belt"]);
+    expect(stemsOf("Dresses and Mugs")).toEqual(["dress", "and", "mug"]);
   });
 });
 

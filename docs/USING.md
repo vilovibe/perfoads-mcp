@@ -35,7 +35,7 @@ Ask the way you would ask a colleague:
 - "Show the ads and assets of ad group Y."
 - "Which conversions are set up, and which count towards bidding?"
 - "What did anyone change in this account in the last 7 days?"
-- "Give me keyword ideas for 'leather belts'." (needs Basic or Standard access)
+- "Give me keyword ideas for 'leather mugs'." (needs Basic or Standard access)
 
 Answers come as a short summary first. Ask "show more" for the next page of rows. Money is shown in the account's own currency.
 
@@ -47,7 +47,7 @@ Say:
 
 - "Run a full audit of the Acme account."
 
-The AI first takes a snapshot of the account (`build_snapshot`), then runs all 162 checks on it (`run_checks`). In apps that show MCP prompts, the `weekly_audit` prompt does the same in one step.
+The AI first takes a snapshot of the account (`build_snapshot`), then runs all 168 checks on it (`run_checks`). In apps that show MCP prompts, the `weekly_audit` prompt does the same in one step.
 
 What you get back, per check:
 
@@ -103,9 +103,9 @@ Approval links expire after 10 minutes. If one expires, ask the AI to propose th
 
 Say what you want in plain fields:
 
-- "Create a Search campaign 'Belts US' with 30 a day, Maximize conversions, United States, English, one ad group 'Leather belts' with these keywords, and this ad: ..."
+- "Create a Search campaign 'Mugs US' with 30 a day, Maximize conversions, United States, English, one ad group 'Leather mugs' with these keywords, and this ad: ..."
 
-The campaign is **always created paused**. Check it in Google Ads, then say "switch on campaign 'Belts US'". That is a second change, with its own approval and your spend limits.
+The campaign is **always created paused**. Check it in Google Ads, then say "switch on campaign 'Mugs US'". That is a second change, with its own approval and your spend limits.
 
 ## 6. Undo and history
 

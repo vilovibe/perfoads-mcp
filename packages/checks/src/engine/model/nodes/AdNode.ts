@@ -10,6 +10,8 @@ export interface AdAttrs {
   /** ads.status. null = the sync stored none, which is UNKNOWN — never read as ENABLED (A1, rules 383, 392). */
   status: string | null;
   headlineCount: number;
+  /** M18 (SK42): the headline texts, in order. Optional: a hand-built model may omit it. */
+  headlineTexts?: string[] | undefined;
   descriptionCount: number;
   /** null when the headlines JSON carries no pinnedField key at all (pinning not stored). */
   pinnedCount: number | null;

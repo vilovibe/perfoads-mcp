@@ -36,7 +36,27 @@ export function matchesBrandNameToken(name: string): boolean {
   if (!name) return false;
   const lower = foldBrandText(name);
   if (NON_BRAND_NAME_RE.test(lower)) return false;
-  return BRAND_NAME_TOKENS.some((t) => lower.includes(t));
+  const words = brandNameWordsOf(name);
+  return words.some((w) =>
+    BRAND_NAME_TOKENS.some((t) => w === t || (w.startsWith(t) && /^\d+$/.test(w.slice(t.length)))),
+  );
+}
+
+/**
+ * The name rule reads WHOLE words (app twin, 7 Nov): "Rebrand Spring" and
+ * "Brand New Arrivals" are not brand campaigns. camelCase is split first
+ * ("BrandSearch" = "brand search"), a token may carry a number ("Brand2025"),
+ * and the English phrase "brand new" (only spaces between) is not the brand
+ * word; "Brand - New customers" still is.
+ */
+export function brandNameWordsOf(name: string): string[] {
+  const split = String(name ?? "")
+    .normalize("NFKC")
+    .replace(/(\p{Ll})(\p{Lu})/gu, "$1 $2")
+    .replace(/(\p{Lu})(\p{Lu}\p{Ll})/gu, "$1 $2")
+    .replace(/\bbrand[ \t]+(?=new\b)/giu, " ");
+  const folded = foldBrandText(split);
+  return folded ? folded.split(" ") : [];
 }
 
 /**

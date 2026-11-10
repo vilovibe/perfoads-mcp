@@ -704,6 +704,63 @@ describe("MI06 conversions from views", () => {
   });
 });
 
+describe("MI06 purchases by click or view", () => {
+  // the old read alone would fire here: 25 view-through beside 75 conversions = 25%
+  const split = (click: number, view: number, unnamed = 0, type = "DEMAND_GEN") =>
+    withStatus(
+      account(
+        {
+          tables: {
+            campaign_control_settings: [
+              {
+                campaign_id: "61",
+                view_through_conversions: 25,
+                conversions: 75,
+                all_conversions: 100,
+                purchase_click_conversions: click,
+                purchase_view_conversions: view,
+                purchase_unnamed_conversions: unnamed,
+              },
+            ],
+          },
+        },
+        [{ id: "61", name: "Remarketing views", type, cost: 13 }],
+      ),
+      "campaign_control_settings",
+      1,
+    );
+  it("about 6 in 10 from a click: fires, view-led, percents never x 100", () => {
+    const f = findingsOf(runOne("MI06", split(9.26, 5.22)))[0];
+    expect(f?.facts).toMatchObject({
+      purchase_click_share: 64,
+      purchase_view_share: 36,
+      viewthrough_share: 36,
+      purchases_counted: 14.5,
+      view_share_band: "inflated",
+    });
+    expect(f?.maxSeverity).toBeUndefined();
+  });
+  it("9 in 10 or more from a click: no finding, even when the old read would fire", () => {
+    expect(state(runOne("MI06", split(790.92, 2.16, 0, "PERFORMANCE_MAX")))).toBe("none_found");
+    expect(state(runOne("MI06", split(63.7, 0, 0, "SHOPPING")))).toBe("none_found");
+  });
+  it("between the two bars: a note, never a warning", () => {
+    const f = findingsOf(runOne("MI06", split(85, 15, 0, "SEARCH")))[0];
+    expect(f?.facts.purchase_click_share).toBe(85);
+    expect(f?.maxSeverity).toBe("info");
+  });
+  it("a purchase type we cannot name: could not check, never the old read", () => {
+    const r = runOne("MI06", split(40, 20, 10));
+    expect(state(r)).toBe("not_checkable");
+    expect(r.state === "not_checkable" ? r.reason : "").toMatch(/type we cannot name/);
+  });
+  it("too few purchases to judge: the old read, as before", () => {
+    const f = findingsOf(runOne("MI06", split(3, 1)))[0];
+    expect(f?.facts.viewthrough_share).toBe(25);
+    expect(f?.facts.purchase_click_share).toBeUndefined();
+  });
+});
+
 describe("MI07 campaign bids toward a goal the account does not", () => {
   const goals = (campaignCategory: string) =>
     account({

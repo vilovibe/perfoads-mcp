@@ -543,6 +543,12 @@ const SH12 = defineCheck({
     // live campaigns only: a paused or removed campaign buys nothing, so it overlaps nothing
     const liveIds = new Set([...shopping, ...pmax].map((c) => c.id));
     const liveOf = (ids: readonly string[]) => ids.filter((id) => liveIds.has(id));
+    // M7 (K12): a brand campaign may sell the same items as a non-brand campaign;
+    // only overlap between non-brand campaigns counts.
+    const brandIds = new Set(
+      [...shopping, ...pmax].filter((c) => c.attrs.layerRole === "brand").map((c) => c.id),
+    );
+    const faultOf = (ids: readonly string[]) => liveOf(ids).filter((id) => !brandIds.has(id));
     // B8/N5: only products that can show are counted, overlap and population alike: an
     // out-of-stock size or a product Google holds back is bought by neither campaign
     const byId = ctx.model.index.productsById;
@@ -554,8 +560,8 @@ const SH12 = defineCheck({
       .filter((o) => showable(o.productId))
       .map((o) => ({
         ...o,
-        pmaxCampaignIds: liveOf(o.pmaxCampaignIds),
-        shoppingCampaignIds: liveOf(o.shoppingCampaignIds),
+        pmaxCampaignIds: faultOf(o.pmaxCampaignIds),
+        shoppingCampaignIds: faultOf(o.shoppingCampaignIds),
       }))
       .filter((o) => o.pmaxCampaignIds.length > 0 && o.shoppingCampaignIds.length > 0);
     const population = ctx.model.children.products.filter(
@@ -624,4 +630,5 @@ const SH12 = defineCheck({
   },
 });
 
+/** Cross-tree checks. */
 export const CROSS_TREE_CHECKS: CheckDefinition[] = [SK23, PX11, PX12, SH12];

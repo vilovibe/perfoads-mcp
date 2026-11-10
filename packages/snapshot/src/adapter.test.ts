@@ -1110,17 +1110,60 @@ describe("toEvidenceInput: conversion actions", () => {
   });
 });
 
+describe("toEvidenceInput: purchases by click or view", () => {
+  const controls = section(
+    "campaign_controls",
+    [{ kind: "controls", campaignId: "11", channelType: "PERFORMANCE_MAX" }],
+    [part("controls", { rows_read: 1 })],
+  );
+  const conversions = (status: "ok" | "failed") =>
+    section("conversions", [], [part("view_through"), part("purchase_split", { status })], {
+      customerGoals: [],
+      detail: {
+        viewThrough: [
+          { campaignId: "11", viewThroughConversions: 2, conversions: 8, allConversions: 10 },
+        ],
+        purchaseSplit:
+          status === "ok"
+            ? [
+                { campaignId: "11", eventType: "CLICK", conversions: 6 },
+                { campaignId: "11", eventType: "ENGAGED_VIEW", conversions: 1.5 },
+                { campaignId: "11", eventType: "IMPRESSION", conversions: 0.5 },
+                { campaignId: "11", eventType: "UNKNOWN", conversions: 1 },
+              ]
+            : null,
+      },
+    });
+  const rowOf = (status: "ok" | "failed") =>
+    (
+      toEvidenceInput(snapshot({ campaign_controls: controls, conversions: conversions(status) }))
+        .tables as Record<string, Record<string, unknown>[]>
+    ).campaign_control_settings?.[0];
+  it("click, view (engaged view + impression) and unnamed purchases ride on the campaign's row", () => {
+    expect(rowOf("ok")).toMatchObject({
+      purchase_click_conversions: 6,
+      purchase_view_conversions: 2,
+      purchase_unnamed_conversions: 1,
+    });
+  });
+  it("a split that was not read is left out, never zero", () => {
+    const row = rowOf("failed");
+    expect(row?.view_through_conversions).toBe(2);
+    expect(row).not.toHaveProperty("purchase_click_conversions");
+  });
+});
+
 describe("toEvidenceInput: landing pages", () => {
   const page = (url: string) => ({ kind: "final_url", url: u(url), metrics });
   it("each page carries the clicks of the campaigns that fed it; not read = null", () => {
-    const belts = "https://example.de/collections/belts";
+    const mugs = "https://example.de/collections/mugs";
     const read = toEvidenceInput(
       snapshot({
         landing_pages: section(
           "landing_pages",
-          [page(belts), page("https://example.de/other")],
+          [page(mugs), page("https://example.de/other")],
           [part("final_urls", { rows_read: 2 }), part("final_url_campaigns", { rows_read: 1 })],
-          { campaignClicks: [{ url: u(belts), campaignId: "31", clicks: 1062 }] },
+          { campaignClicks: [{ url: u(mugs), campaignId: "31", clicks: 1062 }] },
         ),
       }),
     );
@@ -1132,7 +1175,7 @@ describe("toEvidenceInput: landing pages", () => {
       snapshot({
         landing_pages: section(
           "landing_pages",
-          [page(belts)],
+          [page(mugs)],
           [part("final_urls", { rows_read: 1 })],
         ),
       }),

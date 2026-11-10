@@ -195,7 +195,7 @@ export function normaliseColour(colour: string | null | undefined): string {
 export type KeyItem = { id: string; itemGroupId?: string | null; color?: string | null };
 
 /** model part of the key (item_group_id, else the parent product from the id); null for a brand feed copy. */
-function modelOf(item: KeyItem): string | null {
+export function modelOf(item: KeyItem): string | null {
   const id = String(item.id ?? "").trim();
   if (copyOfId(id) != null) return null;
   const group = String(item.itemGroupId ?? "")

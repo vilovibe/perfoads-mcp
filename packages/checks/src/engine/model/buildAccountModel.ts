@@ -18,6 +18,7 @@
 import type { AccountData, Row } from "../shared/input.js";
 import { detectBusinessType } from "../shared/businessType.js";
 import { isBrandCampaign } from "../shared/campaignClassification.js";
+import { assignLayerRoles } from "./layerRoles.js";
 import type { UrlExclusion } from "../shared/pmaxTypes.js";
 import { buildConversionActions } from "./buildConversionActions.js";
 import { buildDemandGenChildren, videoMetricsNodes } from "./buildDemandGenTree.js";
@@ -397,6 +398,23 @@ function changeEditorsOf(changeRows: readonly Record<string, unknown>[]): {
     byEmail.set(email, e);
   }
   return { editors: [...byEmail.values()].sort((a, b) => b.changes - a.changes), noEditor };
+}
+
+/**
+ * M18 (AS24): changes per day that Google's own automation did not make (people in the
+ * interface, API tools, and rows whose client is unknown: counted, so a quiet account
+ * is never made quieter than it is).
+ */
+function madeByPeopleByDayOf(
+  changeRows: readonly Record<string, unknown>[],
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const h of changeRows) {
+    if (changedByOf(String(h.client_type ?? "")) === "google") continue;
+    const day = isoDay(h.change_date_time);
+    if (day) out[day] = (out[day] ?? 0) + 1;
+  }
+  return out;
 }
 
 /** Placement watch: the account's excluded places as criterion keys (placementWatch.ts). null = the table was not loaded. */
@@ -791,6 +809,14 @@ export function buildAccountModel(
               conversions: num(control.conversions),
               allConversions: num(control.all_conversions),
               urlExclusions: urlExclusionsOf(control.url_exclusions),
+              purchaseSplit:
+                num(control.purchase_click_conversions) == null
+                  ? null
+                  : {
+                      click: num(control.purchase_click_conversions) ?? 0,
+                      view: num(control.purchase_view_conversions) ?? 0,
+                      unnamed: num(control.purchase_unnamed_conversions) ?? 0,
+                    },
             }
           : null,
         conversionGoals: goals,
@@ -1106,6 +1132,7 @@ export function buildAccountModel(
         lastDate: changeDates[changeDates.length - 1] ?? null,
         users: new Set(changeRows.map((h) => String(h.user_email ?? ""))).size,
         ...changeEditorsOf(changeRows),
+        madeByPeopleByDay: madeByPeopleByDayOf(changeRows),
         googleMade: changeRows
           .map((h) => {
             const source = googleSourceOf(String(h.client_type ?? ""));
@@ -1235,6 +1262,7 @@ export function buildAccountModel(
         targetCpa: num(s.target_cpa),
         campaignCount: num(s.campaign_count),
         nonRemovedCampaignCount: num(s.non_removed_campaign_count),
+        cpcBidCeiling: num(s.cpc_bid_ceiling),
       })),
       biddingOverrides: overrides.length,
       // whether the table could be read is the check's gate (gateOnData 'biddingOverrides'), not this list
@@ -1423,6 +1451,12 @@ export function buildAccountModel(
       ),
     );
   propagateTruncation(model, [...campaigns, ...universe.nodes]);
+  // each campaign's role (brand / retargeting / prospecting), from structure first
+  assignLayerRoles({
+    campaigns,
+    isBrandText: brandMatcherFrom(data.profile),
+    ownerTags: null,
+  });
   model.coverage = buildCoverageReport(data, dbTables, ctx.consumed);
   return model;
 }

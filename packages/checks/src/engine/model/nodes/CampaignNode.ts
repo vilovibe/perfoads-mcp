@@ -67,10 +67,17 @@ export interface NetworkSpend {
   value: number;
 }
 
+/** The campaign's role: brand, retargeting or prospecting. */
+export type LayerRole = "brand" | "prospecting" | "retargeting";
+
 export interface CampaignAttrs {
   type: CampaignType;
   rawType: string | null;
   isBrand: boolean;
+  /** the campaign's role: brand / retargeting / prospecting (model/layerRoles.ts); null / absent = not computed. */
+  layerRole?: LayerRole | null | undefined;
+  /** why `layerRole` was given, in plain words */
+  layerRoleWhy?: string | null | undefined;
   strategy: string | null;
   targetRoas: number | null;
   targetCpa: number | null;
@@ -124,6 +131,8 @@ export interface CampaignAttrs {
     conversions?: number | null;
     allConversions: number | null;
     urlExclusions?: UrlExclusion[] | null;
+    /** purchases by where they came from: a click, a view (engaged view + impression), or a type Google sent that we cannot name; null = not read */
+    purchaseSplit?: { click: number; view: number; unnamed: number } | null;
   } | null;
   /**
    * A2: the model no longer carries a view-through SHARE. It used to

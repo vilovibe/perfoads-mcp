@@ -207,19 +207,30 @@ const VD04 = defineCheck({
     const findings: CheckFinding[] = [];
     let population = 0;
     for (const c of gate) {
+      // purchases by click / view when read (same as MI06); a type we cannot name = no share
+      const ps = c.attrs.controlSettings?.purchaseSplit ?? null;
+      if (ps && ps.unnamed > 0) continue;
+      const psTotal = ps ? ps.click + ps.view : 0;
+      const split = ps && psTotal > 0 && psTotal >= ctx.settings.floors.strongConv;
       const share = ctx.get("C.viewthrough_share", { campaignId: c.id });
-      if (!isOk(share)) continue;
+      if (!split && !isOk(share)) continue;
       population++;
-      const pct = num(share);
-      if (pct == null || pct <= bar) continue;
+      const pct = split && ps ? Math.round((ps.view / psTotal) * 1000) / 10 : num(share);
+      // the bar is "inflated": 20% exactly counts
+      if (pct == null || pct < bar) continue;
       const spend = ctx.get("C.spend", { campaignId: c.id });
       findings.push(
         finding({
           claimKey: this.claimKey,
           scope: campaignScope(c),
-          cite: [share, spend].filter(isOk),
+          cite: [...(split ? [] : [share]), spend].filter(isOk),
           entity: { id: c.id, name: c.name },
-          facts: { viewthrough_share_pct: pct, bar_pct: bar, spend_90d: num(spend) },
+          facts: {
+            viewthrough_share_pct: pct,
+            bar_pct: bar,
+            spend_90d: num(spend),
+            ...(split ? { purchase_view_share: pct } : {}),
+          },
           population,
         }),
       );

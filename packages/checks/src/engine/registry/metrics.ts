@@ -2771,11 +2771,19 @@ add(
       )
         v = "ahead_of_data";
       // one-click phase 1: a portfolio campaign's target lives on the portfolio, not the
-      // campaign row, so "no target set" there is not a fact — never ready_for_target
+      // campaign row, so "no target set" there is not a fact — never ready_for_target.
+      // The bar is the target it would get (value bidding -> a target ROAS, Maximize
+      // conversions -> a target CPA); other bidding first moves to value bidding with no
+      // target, so Google's own minimum (valueBiddingMinConv30d) is the bar there.
       else if (
         c.attrs.targetRoas == null &&
         c.attrs.targetCpa == null &&
-        conv30 >= ctx.settings.bidding.targetRoasMinConv30d &&
+        conv30 >=
+          (valueBidding
+            ? ctx.settings.bidding.targetRoasMinConv30d
+            : cpaBidding
+              ? ctx.settings.bidding.targetCpaMinConv30d
+              : ctx.settings.bidding.valueBiddingMinConv30d) &&
         !c.attrs.isBrand &&
         !c.attrs.portfolioStrategyId &&
         c.attrs.biddingStrategySource !== "portfolio"
@@ -5268,7 +5276,7 @@ add(
   pr(
     "Pr.missing_attrs",
     "enum[]",
-    "which of {gtin, color, size} are blank",
+    "which of {gtin, color, size} are blank (gtin: and no MPN, identifier_exists not no; color/size: clothing only)",
     "–",
     "N/A",
     "–",

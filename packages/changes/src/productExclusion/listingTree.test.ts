@@ -332,11 +332,11 @@ describe("existing item-id split higher up the path", () => {
 });
 
 describe("allow-list tree (real shop shape: item ids INCLUDED, everything else EXCLUDED, label INDEX0 split above)", () => {
-  // root -> INDEX0 subdivision (belts) -> item-id allow-list; INDEX0/INDEX1 everything else excluded.
+  // root -> INDEX0 subdivision (mugs) -> item-id allow-list; INDEX0/INDEX1 everything else excluded.
   const rows = [
     pmaxRow("1", "SUBDIVISION", null),
     pmaxRow("2", "SUBDIVISION", "1", {
-      productCustomAttribute: { index: "INDEX0", value: "belts" },
+      productCustomAttribute: { index: "INDEX0", value: "mugs" },
     }),
     pmaxRow("3", "UNIT_EXCLUDED", "1", { productCustomAttribute: { index: "INDEX0" } }),
     pmaxRow("4", "UNIT_INCLUDED", "2", {

@@ -61,7 +61,7 @@ export interface BadgeProduct {
   id: string;
   /** current custom labels 0-4 (lowercase); null when the product is not in the feed */
   labels: (string | null)[] | null;
-  /** The product type by level ("Belts > Women" -> ['belts', 'women']); absent = a type node is 'unknown'. */
+  /** The product type by level ("Mugs > Women" -> ['mugs', 'women']); absent = a type node is 'unknown'. */
   types?: string[];
   /** The brand (lowercase; null = none); absent = a brand node is 'unknown'. */
   brand?: string | null;

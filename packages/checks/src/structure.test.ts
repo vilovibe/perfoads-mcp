@@ -68,6 +68,97 @@ describe("AS02 brand campaign on a value or CPA target", () => {
   it("is not checkable with no brand campaign", () => {
     expect(state(runOne("AS02", account()))).toBe("not_checkable");
   });
+  it("M10 (J3): brand Search on plain Maximize conversions / conversion value fires; Maximize clicks never", () => {
+    for (const strategy of ["MAXIMIZE_CONVERSIONS", "MAXIMIZE_CONVERSION_VALUE"]) {
+      const f = findingsOf(
+        runOne("AS02", account({}, [{ id: "12", name: "Brand search", strategy }])),
+      );
+      expect(f).toHaveLength(1);
+      expect(f[0]?.facts.campaign_type).toBe("SEARCH");
+    }
+    expect(
+      state(
+        runOne("AS02", account({}, [{ id: "12", name: "Brand search", strategy: "TARGET_SPEND" }])),
+      ),
+    ).toBe("none_found");
+  });
+  it("M10 (J7): brand Shopping on a shared strategy is not judged and said; on its own target it fires", () => {
+    const shop = (source: string | null) =>
+      runOne(
+        "AS02",
+        account({}, [
+          {
+            id: "13",
+            name: "Brand shopping",
+            type: "SHOPPING",
+            strategy: "TARGET_ROAS",
+            targetRoas: 8,
+            extra: { bidding_strategy_source: source },
+          },
+        ]),
+      );
+    expect(shop("portfolio")).toMatchObject({ state: "not_checkable" });
+    expect((shop("portfolio") as { reason: string }).reason).toMatch(/Brand shopping/);
+    expect(shop(null)).toMatchObject({ state: "not_checkable" });
+    expect(findingsOf(shop("standard"))).toHaveLength(1);
+    expect(findingsOf(shop("standard"))[0]!.facts).not.toHaveProperty("fix");
+  });
+  it("M10: shared strategy cap set = none; no cap = fires; cap unread = not judged", () => {
+    const shared = (cap: number | null | undefined, type = "TARGET_ROAS") =>
+      runOne(
+        "AS02",
+        account(
+          {
+            data: {
+              biddingStrategies: [
+                {
+                  strategy_id: "901",
+                  name: "Brand tROAS",
+                  type,
+                  status: "ENABLED",
+                  target_roas: 8,
+                  non_removed_campaign_count: 1,
+                  ...(cap === undefined ? {} : { cpc_bid_ceiling: cap }),
+                },
+              ],
+            },
+          },
+          [
+            {
+              id: "13",
+              name: "Brand shopping",
+              type: "SHOPPING",
+              strategy: "TARGET_ROAS",
+              targetRoas: 8,
+              extra: {
+                bidding_strategy_source: "portfolio",
+                bidding_strategy_resource: "customers/1/biddingStrategies/901",
+              },
+            },
+          ],
+        ),
+      );
+    expect(shared(0.9)).toMatchObject({ state: "none_found" });
+    const f = findingsOf(shared(0));
+    expect(f).toHaveLength(1);
+    expect(f[0]!.facts).toMatchObject({
+      portfolio_strategy_id: "901",
+      portfolio_campaign_count: 1,
+    });
+    expect(shared(null)).toMatchObject({ state: "not_checkable" });
+    expect(shared(undefined)).toMatchObject({ state: "not_checkable" });
+    expect(shared(0, "TARGET_SPEND")).toMatchObject({ state: "none_found" });
+  });
+  it("M10: brand Search on a target fires with the diagnosis only", () => {
+    const f = findingsOf(
+      runOne(
+        "AS02",
+        account({}, [{ id: "12", name: "Brand search", strategy: "TARGET_CPA", targetCpa: 5 }]),
+      ),
+    );
+    expect(f[0]!.facts).toMatchObject({ strategy: "TARGET_CPA", campaign_type: "SEARCH" });
+    expect(f[0]!.facts).not.toHaveProperty("fix");
+  });
 });
 
 describe("AS03 shared budget starves another campaign", () => {

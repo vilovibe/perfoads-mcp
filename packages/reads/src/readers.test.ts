@@ -8,7 +8,7 @@ import { filterInput, TEST_ACCOUNT_STATUS_NOTE } from "./common.js";
 import { resolveDateRange } from "./dateRange.js";
 import { runReader } from "./reader.js";
 import { adGroupsReader } from "./readers/adGroups.js";
-import { budgetsReader } from "./readers/budgets.js";
+import { budgetsReader, strategyMaxCpc } from "./readers/budgets.js";
 import { campaignsReader } from "./readers/campaigns.js";
 import { keywordsReader } from "./readers/keywords.js";
 import { negativesReader } from "./readers/negatives.js";
@@ -717,6 +717,7 @@ describe("budgets and bidding", () => {
         targetCpa: null,
         targetRoas: 4,
         nonRemovedCampaignCount: 1,
+        maxCpc: "0",
         campaignIds: ["11"],
       },
     ]);
@@ -1143,5 +1144,21 @@ describe("account overview", () => {
     expect(r.parts.find((p) => p.part === "totals")?.status).toBe("skipped");
     expect(r.status).toBe("ok");
     expect(r.summary.totals).toBeNull();
+  });
+});
+
+describe("strategyMaxCpc (M10 fix round)", () => {
+  const at = (o: Record<string, unknown>) => (path: string) =>
+    path.split(".").reduce<unknown>((v, k) => (v as Record<string, unknown> | undefined)?.[k], o);
+  it("reads the cap from the strategy's own type; none = \"0\"; a type with no cap = null", () => {
+    expect(strategyMaxCpc("TARGET_ROAS", at({ targetRoas: { cpcBidCeilingMicros: "1500000" } }))).toBe("1.5");
+    expect(strategyMaxCpc("TARGET_ROAS", at({ targetRoas: {} }))).toBe("0");
+    expect(
+      strategyMaxCpc(
+        "MAXIMIZE_CONVERSION_VALUE",
+        at({ maximizeConversionValue: { cpcBidCeilingMicros: "900000" }, targetRoas: { cpcBidCeilingMicros: "1" } }),
+      ),
+    ).toBe("0.9");
+    expect(strategyMaxCpc("MANUAL_CPC", at({}))).toBeNull();
   });
 });

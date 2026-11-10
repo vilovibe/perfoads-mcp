@@ -641,6 +641,12 @@ function buildAd(ctx: BuildCtx, r: any, adGroupId: string, deps: SearchDeps): Ad
       type: str(r.type),
       status: str(r.status),
       headlineCount: headlines.length,
+      headlineTexts: headlines
+        .map((h) =>
+          typeof h === "string" ? h : typeof h?.text === "string" ? (h.text as string) : "",
+        )
+        .map((t) => t.trim())
+        .filter(Boolean),
       descriptionCount: descriptions.length,
       pinnedCount: hasPinKey
         ? headlines.filter((h) => h?.pinnedField).length +

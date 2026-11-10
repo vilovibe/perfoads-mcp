@@ -589,6 +589,7 @@ const HAND_DEPS: Readonly<Record<string, readonly string[]>> = {
   AS15: ["account_negative_criteria", "campaigns", "dailyMetrics"],
   AS16: ["campaigns", "campaignDailyMetrics", "dailyMetrics"],
   AS17: ["campaigns", "adExtensions", "keywords", "adGroups", "dailyMetrics"],
+  AS24: ["changeHistory", "campaigns", "dailyMetrics"],
   // search: every level of negatives can block a search or a keyword
   SK06: [
     "searchTerms",
@@ -634,6 +635,7 @@ const HAND_DEPS: Readonly<Record<string, readonly string[]>> = {
     "dailyMetrics",
   ],
   SK35: ["searchTerms", "adGroups", "campaigns", "dailyMetrics"],
+  SK42: ["ads", "adGroups", "campaigns", "dailyMetrics"],
   // wave 2: Performance Max (asset groups hang off campaigns, their rows off the groups)
   PX01: ["pmaxChannelDistribution", "campaigns", "dailyMetrics"],
   PX02: ["pmaxSearchInsights", "pmaxSearchTerms", "campaigns", "dailyMetrics"],
@@ -736,6 +738,11 @@ const HAND_DEPS: Readonly<Record<string, readonly string[]>> = {
   SH22: ["mcPromotions", "dailyMetrics"],
   SH23: ["products", "shoppingProductsData", "campaigns", "dailyMetrics"],
   SH24: ["campaigns", "dailyMetrics"],
+  SH26: ["mcShippingSettings", "dailyMetrics"],
+  SH27: ["products", "dailyMetrics"],
+  SH28: ["products", "dailyMetrics"],
+  SH29: ["products", "dailyMetrics"],
+  // M10: one product bought by several campaigns (the per-campaign product rows ride on the campaigns)
   // wave 3: Performance Max products and paid places
   PX05: ["pmax_campaign_products", "campaigns", "dailyMetrics"],
   PX07: ["placement_performance", "account_placement_exclusions", "campaigns", "dailyMetrics"],

@@ -115,6 +115,8 @@ export const CLAIM_KEYS = {
     "account.campaigns_too_small_to_learn",
   /** AS17 (R3.8) — the audit runs before the holiday peak and nothing seasonal is set up */ ACCOUNT_SEASONAL_PEAK_NOT_PREPARED:
     "account.seasonal_peak_not_prepared",
+  /** AS24 (M18, J40) — a spending account with fewer than 5 changes a month for 2+ months */ ACCOUNT_LOW_ACTIVITY:
+    "account.low_activity",
   /** AS18 (R4-D) — a campaign meant for new customers does not exclude past buyers */ AUDIENCE_PAST_BUYERS_NOT_EXCLUDED:
     "audience.past_buyers_not_excluded",
   /** AS19 (negatives framework P3) — the same junk theme blocked one by one in 3+ campaigns while the account list is empty */ NEGATIVES_REPEATED_CAMPAIGN_BLOCKS:
@@ -205,7 +207,7 @@ export const CLAIM_KEYS = {
   /** PX08 */ PMAX_AUTO_ASSETS_ON: "pmax.auto_assets_on",
   /** PX17 (R3.4c) — live PMax assets Google disapproved (the Optimizer's alert rule 2) */
   PMAX_ASSETS_REFUSED: "pmax.assets_refused",
-  /** PX18 (R3.4c) — one live asset group sells the whole catalogue with no product split (the Optimizer's catch-all rule) */
+  /** PX18 (R3.4c) — one live asset group sells the whole catalogue with no product split */
   PMAX_SINGLE_BUCKET: "pmax.single_bucket_structure",
   /** PX19 (R3.8) — Performance Max serving much of its traffic inside mobile apps and games */ PMAX_APP_INVENTORY_SHARE:
     "pmax.app_inventory_share",
@@ -284,6 +286,14 @@ export const CLAIM_KEYS = {
     "product.junk_in_ads",
   /** SH24 (R3.8) — store quality and seller ratings are not readable by an outside tool */ FEED_STORE_QUALITY_UNREADABLE:
     "feed.store_quality_unreadable",
+  /** SH26 (M15) — a Merchant Center store ranking factor is weak (handling, delivery time, return cost) */ FEED_STORE_RANKING_FACTOR:
+    "feed.store_ranking_factor",
+  /** SH27 (M15) — best sellers with fewer than 3 photos */ PRODUCT_PHOTOS_FEW:
+    "product.photos_few",
+  /** SH28 (M15) — products with no product type (barcodes not checked: GTIN / MPN are Merchant Center data) */ PRODUCT_IDENTIFIERS_MISSING:
+    "product.identifiers_missing",
+  /** SH29 (M15) — best sellers with no product highlights or product details */ PRODUCT_HIGHLIGHTS_MISSING:
+    "product.highlights_missing",
   // ---- §B.7 slices ----
   /** SL01 */ AUDIENCE_SEGMENT_UNDERPERFORMS: "audience.segment_underperforms",
   /** SL02 */ AUDIENCE_LISTS_UNUSED: "audience.lists_unused",
@@ -377,6 +387,8 @@ export const CLAIM_KEYS = {
     "extensions.sitelink_off_audience",
   /** SK41 — competitors people search for, worth a separate competitor campaign once the core is profitable */ SEARCH_COMPETITOR_CAMPAIGN_OPPORTUNITY:
     "search.competitor_campaign_opportunity",
+  /** SK42 (M18, J41) — a live Search ad mixes Title Case and sentence case headlines */ ADS_HEADLINE_CASE_MIXED:
+    "ads.headline_case_mixed",
   // ---- §G.10 Video ----
   /** VD01 */ VIDEO_VIEW_RATE_LOW: "video.view_rate_low",
   /** VD02 */ VIDEO_QUARTILE_DROPOFF: "video.quartile_dropoff",
@@ -439,6 +451,7 @@ export const CHECK_CLAIM_KEYS: Readonly<Record<string, ClaimKey>> = {
   AS15: CLAIM_KEYS.ACCOUNT_BRAND_SAFETY_GAPS,
   AS16: CLAIM_KEYS.ACCOUNT_CAMPAIGNS_TOO_SMALL_TO_LEARN,
   AS17: CLAIM_KEYS.ACCOUNT_SEASONAL_PEAK_NOT_PREPARED,
+  AS24: CLAIM_KEYS.ACCOUNT_LOW_ACTIVITY,
   AS18: CLAIM_KEYS.AUDIENCE_PAST_BUYERS_NOT_EXCLUDED,
   AS19: CLAIM_KEYS.NEGATIVES_REPEATED_CAMPAIGN_BLOCKS,
   BB01: CLAIM_KEYS.BUDGET_UTILISATION_LOW,
@@ -499,6 +512,7 @@ export const CHECK_CLAIM_KEYS: Readonly<Record<string, ClaimKey>> = {
   SK39: CLAIM_KEYS.KEYWORD_RECIPE_EXACT_SHARE_LOW,
   SK40: CLAIM_KEYS.EXTENSIONS_SITELINK_OFF_AUDIENCE,
   SK41: CLAIM_KEYS.SEARCH_COMPETITOR_CAMPAIGN_OPPORTUNITY,
+  SK42: CLAIM_KEYS.ADS_HEADLINE_CASE_MIXED,
   PX01: CLAIM_KEYS.PMAX_LOW_SHOPPING_SHARE,
   PX02: CLAIM_KEYS.PMAX_BRAND_LEAK,
   PX03: CLAIM_KEYS.PMAX_ASSET_GROUP_INCOMPLETE,
@@ -544,6 +558,10 @@ export const CHECK_CLAIM_KEYS: Readonly<Record<string, ClaimKey>> = {
   SH22: CLAIM_KEYS.FEED_NO_ACTIVE_PROMOTION,
   SH23: CLAIM_KEYS.PRODUCT_JUNK_IN_ADS,
   SH24: CLAIM_KEYS.FEED_STORE_QUALITY_UNREADABLE,
+  SH26: CLAIM_KEYS.FEED_STORE_RANKING_FACTOR,
+  SH27: CLAIM_KEYS.PRODUCT_PHOTOS_FEW,
+  SH28: CLAIM_KEYS.PRODUCT_IDENTIFIERS_MISSING,
+  SH29: CLAIM_KEYS.PRODUCT_HIGHLIGHTS_MISSING,
   SL01: CLAIM_KEYS.AUDIENCE_SEGMENT_UNDERPERFORMS,
   SL02: CLAIM_KEYS.AUDIENCE_LISTS_UNUSED,
   SL03: CLAIM_KEYS.GEO_COUNTRY_UNDERPERFORMS,

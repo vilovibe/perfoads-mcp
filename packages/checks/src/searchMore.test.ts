@@ -285,7 +285,7 @@ describe("SK09 a converting search that is not a keyword", () => {
 describe("SK09 at least 2 sales, one line per search, no brand searches", () => {
   const brandC: CampaignSpec = { id: "12", name: "Search - Brand" };
   const nb: CampaignSpec = { id: "11", name: "Search - Article" };
-  const other: CampaignSpec = { id: "13", name: "Search - Belts" };
+  const other: CampaignSpec = { id: "13", name: "Search - Mugs" };
   const kws = [keyword({ id: "31", campaignId: "11", adGroupId: "21", text: "boots" })];
   const sGroups = [
     adGroup({ id: "21", campaignId: "11" }),
@@ -305,9 +305,9 @@ describe("SK09 at least 2 sales, one line per search, no brand searches", () => 
     );
   it("the 9 one-sale searches are not findings", () => {
     const ones = [
-      "womens belts leather",
-      "womens leather belts",
-      "designer belts",
+      "womens mugs leather",
+      "womens leather mugs",
+      "designer mugs",
       "new york leather",
     ].map((term) => searchTerm({ campaignId: "11", adGroupId: "21", term, conv: 1 }));
     const r = run([
@@ -319,8 +319,8 @@ describe("SK09 at least 2 sales, one line per search, no brand searches", () => 
   });
   it("one search in two campaigns is one line, its sales summed", () => {
     const r = run([
-      searchTerm({ campaignId: "11", adGroupId: "21", term: "Leather Belts Women", conv: 1 }),
-      searchTerm({ campaignId: "13", adGroupId: "23", term: "leather belts women", conv: 1 }),
+      searchTerm({ campaignId: "11", adGroupId: "21", term: "Leather Mugs Women", conv: 1 }),
+      searchTerm({ campaignId: "13", adGroupId: "23", term: "leather mugs women", conv: 1 }),
     ]);
     const f = findingsOf(r);
     expect(f).toHaveLength(1);
@@ -332,27 +332,27 @@ describe("SK09 at least 2 sales, one line per search, no brand searches", () => 
       searchTerm({ campaignId: "11", adGroupId: "21", term: "leather acme", conv: 3 }),
       searchTerm({ campaignId: "11", adGroupId: "21", term: "acme leather review", conv: 2 }),
       // only in the Brand campaign
-      searchTerm({ campaignId: "12", adGroupId: "22", term: "belt shop", conv: 4 }),
+      searchTerm({ campaignId: "12", adGroupId: "22", term: "mug shop", conv: 4 }),
     ]);
     expect(state(r)).toBe("none_found");
     expect(r.state === "none_found" ? r.note : "").toMatch(/3 brand search\(es\)/);
   });
   it("one row in the Brand campaign does not drop a generic search; only its other sales count", () => {
-    // "leather belts": 1 sale in Brand, 1 + 2 in two generic campaigns -> 3 counted
+    // "leather mugs": 1 sale in Brand, 1 + 2 in two generic campaigns -> 3 counted
     const r = run([
-      searchTerm({ campaignId: "12", adGroupId: "22", term: "leather belts", conv: 1 }),
-      searchTerm({ campaignId: "11", adGroupId: "21", term: "leather belts", conv: 1 }),
-      searchTerm({ campaignId: "13", adGroupId: "23", term: "leather belts", conv: 2 }),
+      searchTerm({ campaignId: "12", adGroupId: "22", term: "leather mugs", conv: 1 }),
+      searchTerm({ campaignId: "11", adGroupId: "21", term: "leather mugs", conv: 1 }),
+      searchTerm({ campaignId: "13", adGroupId: "23", term: "leather mugs", conv: 2 }),
     ]);
     const f = findingsOf(r);
     expect(f).toHaveLength(1);
     expect(f[0]?.facts.conversions).toBe(3);
-    expect(f[0]?.facts.campaign_names).toBe("Search - Article, Search - Belts");
+    expect(f[0]?.facts.campaign_names).toBe("Search - Article, Search - Mugs");
   });
   it("a generic search with 1 sale outside Brand and 3 in Brand is under the bar", () => {
     const r = run([
-      searchTerm({ campaignId: "12", adGroupId: "22", term: "leather belts", conv: 3 }),
-      searchTerm({ campaignId: "11", adGroupId: "21", term: "leather belts", conv: 1 }),
+      searchTerm({ campaignId: "12", adGroupId: "22", term: "leather mugs", conv: 3 }),
+      searchTerm({ campaignId: "11", adGroupId: "21", term: "leather mugs", conv: 1 }),
     ]);
     expect(state(r)).toBe("none_found");
     expect(r.state === "none_found" ? r.note : "").toMatch(/1 with under 2 sales/);
@@ -360,7 +360,7 @@ describe("SK09 at least 2 sales, one line per search, no brand searches", () => 
 });
 
 describe("SK09 keywords are added in Search campaigns only", () => {
-  const shop: CampaignSpec = { id: "14", name: "Shopping - Belts", type: "SHOPPING" };
+  const shop: CampaignSpec = { id: "14", name: "Shopping - Mugs", type: "SHOPPING" };
   const kws = [keyword({ id: "31", campaignId: "11", adGroupId: "21", text: "boots" })];
   const sGroups = [...groups, adGroup({ id: "24", campaignId: "14" })];
   const run = (terms: Row[]) =>
@@ -370,15 +370,15 @@ describe("SK09 keywords are added in Search campaigns only", () => {
     );
   it("a Shopping campaign's converting search is no finding", () => {
     const r = run([
-      searchTerm({ campaignId: "14", adGroupId: "24", term: "belts for women", conv: 5 }),
+      searchTerm({ campaignId: "14", adGroupId: "24", term: "mugs for women", conv: 5 }),
     ]);
     expect(state(r)).toBe("none_found");
     expect(r.state === "none_found" ? r.note : "").toMatch(/0 converting Search-campaign searches/);
   });
   it("the same search in a Search campaign fires, its sales counted from Search rows only", () => {
     const r = run([
-      searchTerm({ campaignId: "14", adGroupId: "24", term: "belts for women", conv: 5 }),
-      searchTerm({ campaignId: "11", adGroupId: "21", term: "belts for women", conv: 2 }),
+      searchTerm({ campaignId: "14", adGroupId: "24", term: "mugs for women", conv: 5 }),
+      searchTerm({ campaignId: "11", adGroupId: "21", term: "mugs for women", conv: 2 }),
     ]);
     const f = findingsOf(r);
     expect(f).toHaveLength(1);
@@ -621,27 +621,29 @@ const ext = (type: string, i: number, extra: Row = {}): Row => ({
   text: `${type.toLowerCase()} ${i}`,
   ...extra,
 });
+const upTo = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
+// M18 (J33): the Search bar is 8 sitelinks and 10 callouts
 const fullSet = [
-  ...[1, 2, 3, 4].map((i) => ext("SITELINK", i)),
-  ...[1, 2, 3, 4, 5, 6].map((i) => ext("CALLOUT", i)),
+  ...upTo(8).map((i) => ext("SITELINK", i)),
+  ...upTo(10).map((i) => ext("CALLOUT", i)),
   ext("STRUCTURED_SNIPPET", 1),
 ];
 
 describe("SK16 asset types a campaign can serve", () => {
   it("fires when a type is missing or short", () => {
-    const r = runOne("SK16", account({ data: { adExtensions: fullSet.slice(4) } }));
+    const r = runOne("SK16", account({ data: { adExtensions: fullSet.slice(8) } }));
     expect(findingsOf(r)[0]?.facts.missing_types).toBe("SITELINK");
   });
   it("is clean with the full set", () => {
     expect(state(runOne("SK16", account({ data: { adExtensions: fullSet } })))).toBe("none_found");
   });
   it("counts account-level assets for a campaign with none of that type", () => {
-    const accountLinks = [1, 2, 3, 4].map((i) =>
+    const accountLinks = upTo(8).map((i) =>
       ext("SITELINK", i, { level: "ACCOUNT", campaign_id: null }),
     );
     const r = runOne(
       "SK16",
-      account({ data: { adExtensions: [...fullSet.slice(4), ...accountLinks] } }),
+      account({ data: { adExtensions: [...fullSet.slice(8), ...accountLinks] } }),
     );
     expect(state(r)).toBe("none_found");
   });
@@ -652,10 +654,10 @@ describe("SK16 asset types a campaign can serve", () => {
 
 describe("account-level assets are no orphans", () => {
   it("SK16 is clean (not held back) with account-level sitelinks beside a campaign's own assets", () => {
-    const accountLinks = [1, 2, 3, 4].map((i) =>
+    const accountLinks = upTo(8).map((i) =>
       ext("SITELINK", i, { level: "ACCOUNT", campaign_id: null }),
     );
-    const input = account({ data: { adExtensions: [...fullSet.slice(4), ...accountLinks] } });
+    const input = account({ data: { adExtensions: [...fullSet.slice(8), ...accountLinks] } });
     expect(runChecks(input).checks.find((c) => c.id === "SK16")?.status).toBe("clean");
   });
 });
@@ -839,9 +841,9 @@ describe("SK20 landing page converts below the account", () => {
       account({
         data: {
           landingPageViews: [
-            page("https://example.com/p/belt{ignore}?utm_source=google&utm_content=ad1", 40, 0),
-            page("https://example.com/p/belt?variant=1&utm_medium=product_sync", 40, 0),
-            page("https://example.com/p/belt%7Bignore%7D?variant=2", 40, 0),
+            page("https://example.com/p/mug{ignore}?utm_source=google&utm_content=ad1", 40, 0),
+            page("https://example.com/p/mug?variant=1&utm_medium=product_sync", 40, 0),
+            page("https://example.com/p/mug%7Bignore%7D?variant=2", 40, 0),
           ],
         },
       }),
@@ -849,12 +851,12 @@ describe("SK20 landing page converts below the account", () => {
     expect(state(r)).toBe("fires");
     const f = findingsOf(r);
     expect(f).toHaveLength(1);
-    expect(f[0]?.scope.name).toBe("https://example.com/p/belt");
+    expect(f[0]?.scope.name).toBe("https://example.com/p/mug");
     expect(f[0]?.facts.clicks).toBe(120);
   });
   it("round 2 (NEW-14): a page weak on its bare URL but strong via its variant URLs is judged whole", () => {
     // alone, the bare URL fires (1 sale on 200 clicks); its product links sell 15 on 200
-    const bare = page("https://example.com/products/belt", 200, 1);
+    const bare = page("https://example.com/products/mug", 200, 1);
     expect(state(runOne("SK20", account({ data: { landingPageViews: [bare] } })))).toBe("fires");
     const r = runOne(
       "SK20",
@@ -864,13 +866,13 @@ describe("SK20 landing page converts below the account", () => {
             bare,
             {
               ...page(
-                "https://example.com/products/belt?variant=101&utm_medium=product_sync",
+                "https://example.com/products/mug?variant=101&utm_medium=product_sync",
                 120,
                 9,
               ),
               cost: 100,
             },
-            { ...page("https://example.com/products/belt?variant=102", 80, 6), cost: 100 },
+            { ...page("https://example.com/products/mug?variant=102", 80, 6), cost: 100 },
           ],
         },
       }),
@@ -935,7 +937,7 @@ describe("SK20 landing page converts below the account", () => {
 
 describe("SK20 on sales value, and pages only paused campaigns fed", () => {
   // the account returns $2.70 per $1 ($100 a day, $270 in sales)
-  const shop: CampaignSpec = { id: "11", name: "PMax - Belts", value: 270 };
+  const shop: CampaignSpec = { id: "11", name: "PMax - Mugs", value: 270 };
   const lp = (url: string, clicks: number, conv: number, cost: number, value: number): Row => ({
     url,
     cost,
@@ -972,8 +974,8 @@ describe("SK20 on sales value, and pages only paused campaigns fed", () => {
     expect(findingsOf(r)[0]?.facts.judged_on).toBe("sale count");
     expect(findingsOf(r)[0]?.title).toBe(SK20_TITLE_COUNT);
   });
-  // a .de belts page, all 1,062 clicks from a paused PMax campaign (no ad id)
-  const belts = "https://example.de/collections/belts";
+  // a .de mugs page, all 1,062 clicks from a paused PMax campaign (no ad id)
+  const mugs = "https://example.de/collections/mugs";
   const dePmax: CampaignSpec = {
     id: "31",
     name: "PMax - Country C v2",
@@ -984,7 +986,7 @@ describe("SK20 on sales value, and pages only paused campaigns fed", () => {
     account(
       {
         data: {
-          landingPageViews: [{ ...lp(belts, 1062, 1, 525.19, 30), campaign_clicks: split }],
+          landingPageViews: [{ ...lp(mugs, 1062, 1, 525.19, 30), campaign_clicks: split }],
         },
       },
       [shop, dePmax],
@@ -994,7 +996,7 @@ describe("SK20 on sales value, and pages only paused campaigns fed", () => {
     expect(findingsOf(r)).toHaveLength(0);
     const line = r.state === "fires" ? (r.withheld?.join(" ") ?? "") : "";
     expect(line).toContain(
-      `${belts} (spend 525.19, 1 sales worth 30.00, 1062 clicks while it was live from PMax - Country C v2)`,
+      `${mugs} (spend 525.19, 1 sales worth 30.00, 1062 clicks while it was live from PMax - Country C v2)`,
     );
   });
   it("a live campaign feeding over 5% of the clicks keeps the page", () => {
@@ -1267,6 +1269,35 @@ describe("SK28 brand searches in a non-brand campaign", () => {
   it("is not checkable without brand terms", () => {
     expect(state(runOne("SK28", input(200, [])))).toBe("not_checkable");
   });
+  // brand blocking only in pairs: a branded product name given as a brand term counts too
+  it("counts searches for a branded product name given as a brand term", () => {
+    const productName = buildInput({
+      campaigns: [generic],
+      profile: { businessType: "ecommerce", brandTerms: ["Acme Outdoor", "Zuma Mug"] },
+      data: {
+        adGroups: groups,
+        searchTerms: [
+          searchTerm({
+            campaignId: "11",
+            adGroupId: "21",
+            term: "trail boots",
+            cost: 1000,
+            conv: 5,
+          }),
+          searchTerm({
+            campaignId: "11",
+            adGroupId: "21",
+            term: "zuma mug brown",
+            cost: 200,
+            conv: 3,
+          }),
+        ],
+      },
+    });
+    const f = findingsOf(runOne("SK28", productName))[0];
+    expect(f?.scope.id).toBe("11");
+    expect(JSON.stringify(f)).toContain("zuma mug brown");
+  });
 });
 
 describe("SK30 research searches sent to a product page", () => {
@@ -1330,6 +1361,30 @@ describe("SK32 partners or Display on a Search campaign", () => {
   });
   it("is not checkable when network settings were not read", () => {
     expect(state(runOne("SK32", account()))).toBe("not_checkable");
+  });
+  // M7 (K13): a brand Shopping campaign with search partners on is not flagged
+  const shopPartners = (name: string) =>
+    account({}, [
+      {
+        id: "12",
+        name,
+        type: "SHOPPING",
+        extra: {
+          network_settings: {
+            targetGoogleSearch: true,
+            targetSearchNetwork: true,
+            targetContentNetwork: false,
+          },
+        },
+      },
+    ]);
+  it("M7: a brand Shopping campaign with partners on is no finding", () => {
+    expect(state(runOne("SK32", shopPartners("Shopping - Brand")))).toBe("none_found");
+  });
+  it("M7: a prospecting Shopping campaign with partners on still fires", () => {
+    expect(
+      findingsOf(runOne("SK32", shopPartners("Shopping all shoes")))[0]?.facts.search_partners_on,
+    ).toBe(true);
   });
   // R9: a Brand Search campaign (1,575 clicks, $2,157) has partners on and every click on Google Search
   const brand: CampaignSpec = { id: "11", name: "Brand Search" };
@@ -1460,17 +1515,17 @@ describe("SK35 kinds of searches bought (information)", () => {
             adGroup({ id: "22", campaignId: "12" }),
           ],
           searchTerms: [
-            searchTerm({ campaignId: "11", adGroupId: "21", term: "acme belts", cost: 40 }),
+            searchTerm({ campaignId: "11", adGroupId: "21", term: "acme mugs", cost: 40 }),
             searchTerm({
               campaignId: "12",
               adGroupId: "22",
-              term: "womens leather belt",
+              term: "womens leather mug",
               cost: 287.77,
             }),
             searchTerm({
               campaignId: "12",
               adGroupId: "22",
-              term: "best leather belts",
+              term: "best leather mugs",
               cost: 25.14,
             }),
           ],

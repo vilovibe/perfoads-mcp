@@ -404,6 +404,18 @@ export const fixtureRows = (query: string, opts: FixtureOptions = {}): Row[] | n
               : []),
           ]);
       if (query.includes("conversion_value_rule_primary_dimension")) return [];
+      // purchases by where they came from: every purchase from a click
+      if (query.includes("segments.conversion_attribution_event_type"))
+        return camps
+          .filter((c) => c.conv > 0)
+          .map((c) => ({
+            campaign: { id: c.id },
+            segments: {
+              conversionAttributionEventType: "CLICK",
+              conversionActionCategory: "PURCHASE",
+            },
+            metrics: { conversions: c.conv * days },
+          }));
       if (query.includes("metrics.view_through_conversions"))
         return camps.map((c) => ({
           campaign: { id: c.id },
@@ -890,11 +902,12 @@ export const fixtureRows = (query: string, opts: FixtureOptions = {}): Row[] | n
         },
         campaignAsset: { fieldType, status: "ENABLED", primaryStatus: "ELIGIBLE" },
       });
+      // M18 (J33): the Search bar, 8 sitelinks and 10 callouts per campaign
       return ["11", "12", "13"].flatMap((c) => [
-        ...[1, 2, 3, 4].map((i) =>
+        ...[1, 2, 3, 4, 5, 6, 7, 8].map((i) =>
           link(c, `7${c}${i}`, "SITELINK", { sitelinkAsset: { linkText: `Link ${i}` } }),
         ),
-        ...[1, 2, 3, 4, 5, 6].map((i) =>
+        ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) =>
           link(c, `8${c}${i}`, "CALLOUT", { calloutAsset: { calloutText: `Callout ${i}` } }),
         ),
         link(c, `9${c}1`, "STRUCTURED_SNIPPET", {

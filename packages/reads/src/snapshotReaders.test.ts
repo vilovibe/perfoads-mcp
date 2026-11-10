@@ -177,12 +177,40 @@ describe("conversions: the snapshot's detail", () => {
               metrics: { conversionsValue: 100 },
             },
           ]
-        : [
-            {
-              campaign: { id: "11" },
-              metrics: { viewThroughConversions: 3, conversions: 25, allConversions: 30 },
-            },
-          ],
+        : q.includes("conversion_attribution_event_type")
+          ? [
+              {
+                campaign: { id: "11" },
+                segments: {
+                  conversionAttributionEventType: "CLICK",
+                  conversionActionCategory: "PURCHASE",
+                },
+                metrics: { conversions: 9.5 },
+              },
+              {
+                campaign: { id: "11" },
+                segments: {
+                  conversionAttributionEventType: "ENGAGED_VIEW",
+                  conversionActionCategory: "PURCHASE",
+                },
+                metrics: { conversions: 0.5 },
+              },
+              // another category never counts, even if the filter let it through
+              {
+                campaign: { id: "11" },
+                segments: {
+                  conversionAttributionEventType: "IMPRESSION",
+                  conversionActionCategory: "SUBMIT_LEAD_FORM",
+                },
+                metrics: { conversions: 4 },
+              },
+            ]
+          : [
+              {
+                campaign: { id: "11" },
+                metrics: { viewThroughConversions: 3, conversions: 25, allConversions: 30 },
+              },
+            ],
     ...over,
   });
   const input = { dateRange: resolveDateRange("LAST_30_DAYS"), detail: true };
@@ -223,6 +251,11 @@ describe("conversions: the snapshot's detail", () => {
     expect(d?.viewThrough).toEqual([
       { campaignId: "11", viewThroughConversions: 3, conversions: 25, allConversions: 30 },
     ]);
+    // purchases by where they came from, purchases only
+    expect(d?.purchaseSplit).toEqual([
+      { campaignId: "11", eventType: "CLICK", conversions: 9.5 },
+      { campaignId: "11", eventType: "ENGAGED_VIEW", conversions: 0.5 },
+    ]);
   });
 
   it("a failed part is null in the detail, never an empty list", async () => {
@@ -234,7 +267,12 @@ describe("conversions: the snapshot's detail", () => {
     );
     const r = await runReader(conversionsReader, fakeContext(search), input, { all: true });
     const d = detailOf(r.extra);
-    expect([d?.campaignGoals, d?.valueByRule, d?.viewThrough]).toEqual([null, null, null]);
+    expect([d?.campaignGoals, d?.valueByRule, d?.viewThrough, d?.purchaseSplit]).toEqual([
+      null,
+      null,
+      null,
+      null,
+    ]);
     expect(d?.daily?.length).toBe(2);
   });
 

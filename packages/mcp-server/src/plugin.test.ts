@@ -426,7 +426,7 @@ describe("with a plugin", () => {
     expect(today.map((t) => t.checkId)).toEqual(
       guided.slice(0, today.length).map((f) => f.checkId),
     );
-    expect(pages[0]?.text).toMatch(/Today \(by severity, then money\):\n1\. /);
+    expect(pages[0]?.text).toMatch(/Today \(most severe first\):\n1\. /);
     expect(pages.map((p) => p.text).join("\n")).toMatch(/\n {2}Action: /);
     for (const p of pages.slice(1)) expect(p.structured.todayList).toEqual([]);
 
@@ -463,7 +463,7 @@ describe("with a plugin", () => {
     }
     const today = pages[0]?.structured.todayList as { rank: number }[];
     expect(today.length).toBeGreaterThan(0);
-    expect(pages[0]?.text).toMatch(/Today \(by severity, then money\):\n1\. /);
+    expect(pages[0]?.text).toMatch(/Today \(most severe first\):\n1\. /);
     // with the plugin loaded, the instructions do not forbid its fix advice
     expect(client.getInstructions()).not.toMatch(/Diagnosis only/);
   });

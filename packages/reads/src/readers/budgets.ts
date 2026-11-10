@@ -60,6 +60,10 @@ export const StrategySchema = z.object({
   targetCpa: z.string().nullable(),
   targetRoas: z.number().nullable(),
   nonRemovedCampaignCount: z.number(),
+  maxCpc: z
+    .string()
+    .nullable()
+    .describe('Highest cost per click the strategy may bid; "0" = no cap; null = this type has no cap'),
   campaignIds: z.array(z.string()).describe("First 20 campaigns on this strategy"),
 });
 export type Strategy = z.infer<typeof StrategySchema>;
@@ -97,6 +101,24 @@ export const BUDGETS_QUERY = `
     FROM campaign_budget
     WHERE campaign_budget.status != 'REMOVED'`;
 
+/** The strategy types whose settings carry a max CPC cap. */
+const STRATEGY_CAP_FIELDS = [
+  "target_roas",
+  "target_cpa",
+  "target_spend",
+  "maximize_conversion_value",
+  "maximize_conversions",
+  "target_impression_share",
+] as const;
+
+/** A strategy's max CPC cap from its own type's settings: "0" = no cap; null = its type has no cap. */
+export function strategyMaxCpc(type: string | null, at: (path: string) => unknown): string | null {
+  const t = String(type ?? "").toLowerCase();
+  if (!(STRATEGY_CAP_FIELDS as readonly string[]).includes(t)) return null;
+  const camel = t.replace(/_([a-z])/g, (_m, c: string) => c.toUpperCase());
+  return money(at(`${camel}.cpcBidCeilingMicros`) ?? 0) ?? "0";
+}
+
 export const STRATEGIES_QUERY = `
     SELECT
       bidding_strategy.id,
@@ -107,7 +129,8 @@ export const STRATEGIES_QUERY = `
       bidding_strategy.target_cpa.target_cpa_micros,
       bidding_strategy.target_roas.target_roas,
       bidding_strategy.maximize_conversions.target_cpa_micros,
-      bidding_strategy.maximize_conversion_value.target_roas
+      bidding_strategy.maximize_conversion_value.target_roas,
+      ${STRATEGY_CAP_FIELDS.map((f) => `bidding_strategy.${f}.cpc_bid_ceiling_micros`).join(",\n      ")}
     FROM bidding_strategy
     WHERE bidding_strategy.status != 'REMOVED'`;
 
@@ -217,6 +240,7 @@ export const budgetsReader: ReaderDef<
         targetRoas:
           positive(s("targetRoas.targetRoas")) ?? positive(s("maximizeConversionValue.targetRoas")),
         nonRemovedCampaignCount: count(s("nonRemovedCampaignCount")),
+        maxCpc: strategyMaxCpc(enumValue(s("type")), s),
         campaignIds: campaigns
           .filter((c) => c.portfolioStrategyId === strategyId)
           .slice(0, EMBEDDED_MAX)

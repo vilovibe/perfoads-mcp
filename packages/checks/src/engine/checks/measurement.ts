@@ -718,7 +718,12 @@ function isRemarketing(c: {
 const REMARKETING_VIEW_LINE =
   "It is a remarketing campaign: view conversions there often credit people who were going to buy anyway.";
 
-/** MI06 — view-through conversions above 10% of all conversions on a campaign. */
+/**
+ * MI06 — view-through conversions above 10% of all conversions on a campaign.
+ * When the purchases were read by where they came from, a campaign is judged on them:
+ * 90%+ from a click = fine (no finding), 20%+ from a view (engaged view + impression) =
+ * inflated, between = a note. Otherwise the old read (view-through / (conversions + view-through)).
+ */
 const MI06 = defineCheck({
   id: "MI06",
   claimKey: "tracking.viewthrough_inflation",
@@ -729,7 +734,7 @@ const MI06 = defineCheck({
   requires: [CONTROL_SETTINGS],
   impactFormula: "IMP_MEASUREMENT",
   noneFoundMeans:
-    "View-through conversions stay under 10% on the campaigns with enough conversions to judge.",
+    "At least 9 in 10 of the conversions counted on the campaigns judged came from a click.",
   run(ctx: CheckCtx): CheckResult {
     const gate = gateOnData(ctx, [CONTROL_SETTINGS]);
     if (gate) return gate;
@@ -742,19 +747,40 @@ const MI06 = defineCheck({
     let noRow = 0;
     // a row that predates the conversions column (older snapshot): not the same as no row
     let convNotRead = 0;
+    /** judged on all conversions, where engaged views cannot be told apart from clicks */
+    let judgedOnAllConversions = 0;
+    /** purchases with a type we cannot name: could not check, never a share or the old read */
+    const unreadSplit: string[] = [];
     for (const c of campaignsOf(ctx)) {
+      const ps = c.attrs.controlSettings?.purchaseSplit ?? null;
+      if (ps && ps.unnamed > 0) {
+        unreadSplit.push(c.name ?? c.id);
+        continue;
+      }
+      // purchases by click / view first, on the same floor as the old read; under it, the old read
+      const psTotal = ps ? ps.click + ps.view : 0;
+      const split =
+        ps && psTotal > 0 && psTotal >= ctx.settings.floors.strongConv
+          ? { click: ps.click / psTotal, view: ps.view / psTotal, total: psTotal }
+          : null;
       const vt = ctx.get("C.viewthrough_share", { campaignId: c.id });
-      if (!isOk(vt)) {
+      if (!split && !isOk(vt)) {
         if (vt.reason === "insufficient_data") belowFloor.push(c.name ?? c.id);
         else if (c.attrs.controlSettings && c.attrs.controlSettings.conversions == null)
           convNotRead += 1;
         else noRow += 1;
         continue;
       }
-      const share = num(vt);
+      // percents (0-100), never a 0-1 fraction
+      const share = split ? Math.round(split.view * 1000) / 10 : num(vt);
       if (share == null) continue;
       judged += 1;
-      if (share <= viewThroughSharePct) continue;
+      if (!split) judgedOnAllConversions += 1;
+      if (split ? split.click * 100 >= 100 - viewThroughSharePct : share <= viewThroughSharePct)
+        continue;
+      const inflated = split
+        ? split.view * 100 >= VIEW_SHARE_INFLATED_PCT
+        : share >= VIEW_SHARE_INFLATED_PCT;
       // CAMPAIGN scope: size the money at risk to THIS campaign, never to the account.
       // A YouTube-only campaign carries none: views are its job, not inflation.
       const youtubeOnly = isYouTubeOnly(c);
@@ -768,7 +794,11 @@ const MI06 = defineCheck({
       const base = finding({
         claimKey: "tracking.viewthrough_inflation",
         scope: { type: "campaign", id: c.id, name: c.name, campaignId: c.id, campaignName: c.name },
-        cite: [vt, ctx.get("C.spend", { campaignId: c.id }), ctx.get("A.spend")],
+        cite: [
+          ...(split ? [] : [vt]),
+          ctx.get("C.spend", { campaignId: c.id }),
+          ctx.get("A.spend"),
+        ],
         entity: { id: c.id, name: c.name },
         // omitted, not guessed, when the two spends do not resolve: IMP_MEASUREMENT
         // then returns IMP_NONE with the reason instead of sizing it wrong.
@@ -776,11 +806,20 @@ const MI06 = defineCheck({
           viewthrough_share: share,
           ...(affected == null ? {} : { share_of_spend_affected: affected }),
           view_channel: viewChannel,
-          ...(vtc == null ? {} : { view_through_conversions: vtc }),
-          ...(clickConv == null ? {} : { click_and_engaged_conversions: clickConv }),
+          ...(split
+            ? {
+                // purchases only, by where they came from, in percent
+                purchase_click_share: Math.round(split.click * 1000) / 10,
+                purchase_view_share: share,
+                purchases_counted: Math.round(split.total * 10) / 10,
+              }
+            : {
+                ...(vtc == null ? {} : { view_through_conversions: vtc }),
+                ...(clickConv == null ? {} : { click_and_engaged_conversions: clickConv }),
+              }),
           // YouTube-only: views are its normal measure, so no band (never "inflated")
           ...(viewChannel && !youtubeOnly
-            ? { view_share_band: share >= VIEW_SHARE_INFLATED_PCT ? "inflated" : "watch" }
+            ? { view_share_band: inflated ? "inflated" : "watch" }
             : {}),
           ...(youtubeOnly ? { youtube_only: true } : {}),
           ...(remarketing ? { remarketing: true } : {}),
@@ -794,15 +833,22 @@ const MI06 = defineCheck({
             }
           : {}),
       });
+      if (split) {
+        // purchases judged on the one bar: under 20% from views (and under 90% from clicks) = a note on any channel
+        findings.push({
+          ...base,
+          ...(!inflated || youtubeOnly ? { maxSeverity: "info" as const } : {}),
+          ...(remarketing ? { openItems: [REMARKETING_VIEW_LINE] } : {}),
+        });
+        continue;
+      }
       findings.push(
         viewChannel
           ? {
               ...base,
               // above 10% and under 20% a view-led channel is doing its job: a note, never a warning; 20% exactly = inflated.
               // YouTube-only: a note at any share
-              ...(share < VIEW_SHARE_INFLATED_PCT || youtubeOnly
-                ? { maxSeverity: "info" as const }
-                : {}),
+              ...(!inflated || youtubeOnly ? { maxSeverity: "info" as const } : {}),
               // engaged views (10s+ watched, no click) sit INSIDE Google's conversions column; the split is not synced
               openItems: [
                 "We could not split out engaged-view conversions (people who watched 10+ seconds and did not click). Google counts them inside the conversions column, so the click-only number may be lower still.",
@@ -824,9 +870,12 @@ const MI06 = defineCheck({
         belowFloor.length > 0 ? `${belowFloor.length} below the conversion floor` : null,
         noRow > 0 ? `${noRow} with no ${CONTROL_SETTINGS} row joining the campaign` : null,
         convNotReadText,
+        unreadSplit.length > 0
+          ? `${unreadSplit.length} could not be checked because Google gave their purchases a type we cannot name`
+          : null,
       ].filter(Boolean);
       // only old-snapshot rows: the share cannot be computed at all, so not checkable, not "too few"
-      if (convNotRead > 0 && belowFloor.length === 0)
+      if ((convNotRead > 0 || unreadSplit.length > 0) && belowFloor.length === 0)
         return {
           state: "not_checkable",
           reason: `no campaign could be judged for view-through: ${parts.join("; ")}`,
@@ -846,11 +895,20 @@ const MI06 = defineCheck({
         : null,
       noRow > 0 ? `${noRow} with no ${CONTROL_SETTINGS} row joining the campaign` : null,
       convNotReadText,
+      unreadSplit.length > 0
+        ? `${unreadSplit.length} could not be checked (Google gave their purchases a type we cannot name: ${unreadSplit.join(", ")})`
+        : null,
     ].filter(Boolean);
-    const note =
+    const noteParts = [
       unjudged.length > 0
         ? `${judged} of ${campaignsOf(ctx).length} campaigns judged; not judged: ${unjudged.join("; ")}`
-        : undefined;
+        : null,
+      // the old read counts engaged views as clicks, so it cannot say "from a click" for sure
+      judgedOnAllConversions > 0
+        ? `${judgedOnAllConversions} judged on all conversions, where engaged views cannot be told apart from clicks`
+        : null,
+    ].filter(Boolean);
+    const note = noteParts.length > 0 ? noteParts.join("; ") : undefined;
     return { state: "none_found", population: judged, note };
   },
 });

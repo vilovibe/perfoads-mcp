@@ -5,7 +5,7 @@
 // each product per campaign, per model + colour, at that campaign's own bar
 // (C.product_waste_bar = 2 x its cost per sale; C.product_loss_bar = 1 x), plus whole
 // categories that lose money. The Mira rows are a demo shop fixture (neutral names and ids,
-// spend scaled and rounded); campaign totals, menswear, belts and product types are the same
+// spend scaled and rounded); campaign totals, menswear, mugs and product types are the same
 // synthetic rows the app's tests (campaignProductLosers.test.ts, categoryRollup.test.ts,
 // productWasteBar.test.ts) use, and the bars and relationships below are the app test's own.
 
@@ -55,12 +55,12 @@ type Row = {
   cat?: string | null;
 };
 
-const JACKETS = "DEMO - PMAX - JACKETS";
-const BELTS = "DEMO - PMAX  - BELTS"; // two spaces, exactly as Google Ads shows it
+const JACKETS = "DEMO - PMAX - OUTERWEAR";
+const MUGS = "DEMO - PMAX  - STRAPS"; // two spaces, exactly as Google Ads shows it
 const SHOP = "DEMO - SHOP - Brand";
 const CAMPS: Camp[] = [
   { id: "1001", name: JACKETS, type: "PERFORMANCE_MAX", cost: 4980, conv: 60 }, // $83 a sale -> bar $166
-  { id: "1002", name: BELTS, type: "PERFORMANCE_MAX", cost: 7980, conv: 210 }, // $38 -> bar $76; loss bar = $50 floor
+  { id: "1002", name: MUGS, type: "PERFORMANCE_MAX", cost: 7980, conv: 210 }, // $38 -> bar $76; loss bar = $50 floor
   { id: "1003", name: SHOP, type: "SHOPPING", cost: 640, conv: 13 }, // $49.23 -> bar $98.46
   { id: "11", name: "DEMO - SEARCH - Brand", type: "SEARCH", cost: 1200, conv: 130 },
 ];
@@ -105,21 +105,21 @@ const MENSWEAR: Row[] = [
     color: "Brown",
   },
 ];
-const BELT_ROWS: Row[] = [
+const MUG_ROWS: Row[] = [
   // sells, but at 96% ROAS after more than 1 x a sale there -> loss-maker
   {
-    campaign: BELTS,
+    campaign: MUGS,
     id: "shopify_us_7100000000001_1",
-    title: "Demo Belt Cognac 85",
+    title: "Demo Mug Cognac 85",
     cost: 60,
     conv: 1,
     value: 57.6,
     color: "Cognac",
   },
   {
-    campaign: BELTS,
+    campaign: MUGS,
     id: "shopify_us_7100000000001_2",
-    title: "Demo Belt Cognac 90",
+    title: "Demo Mug Cognac 90",
     cost: 40,
     conv: 1,
     value: 38.4,
@@ -127,32 +127,32 @@ const BELT_ROWS: Row[] = [
   },
   // 96% ROAS but under the loss bar ($50): not flagged
   {
-    campaign: BELTS,
+    campaign: MUGS,
     id: "shopify_us_7100000000002_1",
-    title: "Kai Belt Olive 95",
+    title: "Kai Mug Olive 95",
     cost: 30,
     conv: 1,
     value: 28.8,
     color: "Olive",
   },
-  // wastes in Jackets, sells in Belts -> flagged in Jackets only
+  // wastes in Jackets, sells in Mugs -> flagged in Jackets only
   {
-    campaign: BELTS,
+    campaign: MUGS,
     id: "shopify_us_7200000000001_1",
-    title: "Sora Belt Black 85",
+    title: "Sora Mug Black 85",
     cost: 50,
     conv: 3,
     value: 450,
     color: "Black",
   },
   // colourless sizes of a colourless model, summed as the model
-  { campaign: BELTS, id: "shopify_us_7300000000001_1", title: "Lumi Belt 85", cost: 50 },
-  { campaign: BELTS, id: "shopify_us_7300000000001_2", title: "Lumi Belt 90", cost: 40 },
+  { campaign: MUGS, id: "shopify_us_7300000000001_1", title: "Lumi Mug 85", cost: 50 },
+  { campaign: MUGS, id: "shopify_us_7300000000001_2", title: "Lumi Mug 90", cost: 40 },
 ];
 const CROSS: Row = {
   campaign: JACKETS,
   id: "shopify_us_7200000000001_2",
-  title: "Sora Belt Black 90",
+  title: "Sora Mug Black 90",
   cost: 200,
   color: "Black",
 };
@@ -161,13 +161,13 @@ const SHOP_ROWS: Row[] = [
   {
     campaign: SHOP,
     id: "shopify_us_7400000000001_1-cp-demo",
-    title: "Demo Belt (copy)",
+    title: "Demo Mug (copy)",
     cost: 110,
   },
   {
     campaign: SHOP,
     id: "shopify_us_7400000000001_1",
-    title: "Demo Belt Tan 85",
+    title: "Demo Mug Tan 85",
     cost: 20,
     conv: 2,
     value: 300,
@@ -341,18 +341,18 @@ describe("C.product_waste_bar / C.product_loss_bar (same numbers as the app)", (
 });
 
 describe("PX05 per campaign, per model + colour, one finding per campaign and reason (demo Mira fixture)", () => {
-  const input = build(CAMPS, [...MIRA, ...MENSWEAR, ...BELT_ROWS, CROSS, ...SHOP_ROWS]);
+  const input = build(CAMPS, [...MIRA, ...MENSWEAR, ...MUG_ROWS, CROSS, ...SHOP_ROWS]);
   const px05 = fired(runOne("PX05", input));
   const camelTop = must(
     [...MIRA].filter((r) => r.color === "Light Camel").sort((a, b) => b.cost - a.cost)[0],
   );
   const jackets = must(cardOf(px05, JACKETS, "no_sale"));
 
-  it("one finding per campaign and reason: Jackets no sale, Belts no sale, Belts loses money", () => {
+  it("one finding per campaign and reason: Jackets no sale, Mugs no sale, Mugs loses money", () => {
     expect(px05.map((f) => [f.scope.campaignName, f.facts.reason])).toEqual([
       [JACKETS, "no_sale"],
-      [BELTS, "no_sale"],
-      [BELTS, "loses_money"],
+      [MUGS, "no_sale"],
+      [MUGS, "loses_money"],
     ]);
   });
 
@@ -381,7 +381,7 @@ describe("PX05 per campaign, per model + colour, one finding per campaign and re
     ).toEqual([
       [`${camelTop.title} (5 sizes)`, 377, 5],
       ["Men's Leather Jacket Viktor Black Demo Brand L (3 sizes)", 215, 3],
-      ["Sora Belt Black 90", 200, 1],
+      ["Sora Mug Black 90", 200, 1],
     ]);
     expect(jackets.facts).toMatchObject({
       products: 3,
@@ -415,8 +415,8 @@ describe("PX05 per campaign, per model + colour, one finding per campaign and re
   });
 
   it("loss-maker at 96% ROAS on its own finding, only above the loss bar (the $50 spend floor)", () => {
-    const loss = must(cardOf(px05, BELTS, "loses_money"));
-    expect(listed(loss)).toEqual(["Demo Belt Cognac 85 (2 sizes)"]);
+    const loss = must(cardOf(px05, MUGS, "loses_money"));
+    expect(listed(loss)).toEqual(["Demo Mug Cognac 85 (2 sizes)"]);
     expect(loss.rows?.[0]?.cells).toMatchObject({
       campaign_product_spend: 100,
       campaign_product_sales_value: 96,
@@ -430,33 +430,33 @@ describe("PX05 per campaign, per model + colour, one finding per campaign and re
       break_even_not_priced: 1,
     });
     expect(loss.facts.headline).toBe(
-      `Demo Belt Cognac 85 (2 sizes) sells in ${BELTS}, but its sales came to 96% of its ad cost (ROAS 96%) after it spent $100, past the spend floor of $50.00, which is higher than what a sale costs there`,
+      `Demo Mug Cognac 85 (2 sizes) sells in ${MUGS}, but its sales came to 96% of its ad cost (ROAS 96%) after it spent $100, past the spend floor of $50.00, which is higher than what a sale costs there`,
     );
     // MCP rule (kept): a product losing money is never an "opportunity"
     expect(loss.maxSeverity).toBe("warning");
   });
 
   it("a product wasting in one campaign and selling in another is flagged only in the first", () => {
-    expect(listed(jackets)).toContain("Sora Belt Black 90");
+    expect(listed(jackets)).toContain("Sora Mug Black 90");
     expect(
       px05
-        .filter((f) => f.scope.campaignName === BELTS)
+        .filter((f) => f.scope.campaignName === MUGS)
         .some((f) => listed(f).some((n) => /Sora/.test(n))),
     ).toBe(false);
   });
 
-  it("colourless sizes are judged as their model (summed: $90 >= the Belts bar $76)", () => {
-    const belts = must(cardOf(px05, BELTS, "no_sale"));
-    expect(listed(belts)).toEqual(["Lumi Belt 85 (2 sizes and colours together)"]);
-    expect(belts.facts).toMatchObject({
+  it("colourless sizes are judged as their model (summed: $90 >= the Mugs bar $76)", () => {
+    const mugs = must(cardOf(px05, MUGS, "no_sale"));
+    expect(listed(mugs)).toEqual(["Lumi Mug 85 (2 sizes and colours together)"]);
+    expect(mugs.facts).toMatchObject({
       products: 1,
       variants: 2,
       one_colour: false,
       colour_source: "no colour known",
       campaign_product_spend: 90,
     });
-    expect(belts.facts.headline).toBe(
-      `Lumi Belt 85 (2 sizes and colours together) spent $90.00 in ${BELTS} with no sale, more than 2x what a sale costs there ($76.00)`,
+    expect(mugs.facts.headline).toBe(
+      `Lumi Mug 85 (2 sizes and colours together) spent $90.00 in ${MUGS} with no sale, more than 2x what a sale costs there ($76.00)`,
     );
   });
 
@@ -464,7 +464,7 @@ describe("PX05 per campaign, per model + colour, one finding per campaign and re
     expect(px05.some((f) => f.scope.campaignName === SHOP)).toBe(false);
     const sh04 = fired(runOne("SH04", input));
     expect(sh04.map((f) => [f.scope.name, f.scope.campaignName])).toEqual([
-      ["Demo Belt (copy)", SHOP],
+      ["Demo Mug (copy)", SHOP],
     ]);
     expect(sh04[0]?.facts).toMatchObject({
       reason: "no_sale",
@@ -477,18 +477,18 @@ describe("PX05 per campaign, per model + colour, one finding per campaign and re
   it("two loss-makers: one finding, every ROAS in the sentence", () => {
     const rows: Row[] = [
       {
-        campaign: BELTS,
+        campaign: MUGS,
         id: "shopify_us_8100000000001_1",
-        title: "Mira Belt Red 85",
+        title: "Mira Mug Red 85",
         cost: 120,
         conv: 1,
         value: 73.2,
         color: "Red",
       },
       {
-        campaign: BELTS,
+        campaign: MUGS,
         id: "shopify_us_8100000000002_1",
-        title: "Rae Belt Tan 85",
+        title: "Rae Mug Tan 85",
         cost: 80,
         conv: 1,
         value: 70.4,
@@ -498,7 +498,7 @@ describe("PX05 per campaign, per model + colour, one finding per campaign and re
     const two = fired(runOne("PX05", build(CAMPS, rows)));
     expect(two).toHaveLength(1);
     expect(two[0]?.facts.headline).toBe(
-      `2 products sell in ${BELTS}, but lose money: ROAS 61% and 88%, each after spending past the spend floor of $50.00, which is higher than what a sale costs there`,
+      `2 products sell in ${MUGS}, but lose money: ROAS 61% and 88%, each after spending past the spend floor of $50.00, which is higher than what a sale costs there`,
     );
   });
 
@@ -513,7 +513,7 @@ describe("PX05 per campaign, per model + colour, one finding per campaign and re
     const f = fired(runOne("PX05", build(CAMPS, many)))[0];
     expect(f?.rows).toHaveLength(15);
     expect(String(f?.facts.headline)).toMatch(
-      /^15 products spent \$2,655 in DEMO - PMAX - JACKETS with no sale, each more than 2x/,
+      /^15 products spent \$2,655 in DEMO - PMAX - OUTERWEAR with no sale, each more than 2x/,
     );
   });
 
@@ -549,9 +549,9 @@ describe("failure paths: never 'none found' when we could not check", () => {
         color: "Black",
       },
       {
-        campaign: BELTS,
+        campaign: MUGS,
         id: "shopify_us_2_1",
-        title: "Good Belt Tan 85",
+        title: "Good Mug Tan 85",
         cost: 50,
         conv: 2,
         value: 400,
@@ -561,7 +561,7 @@ describe("failure paths: never 'none found' when we could not check", () => {
     const r = runOne("PX05", build(CAMPS, quiet, { marker: capped(70) }));
     expect(r.state).toBe("not_checkable");
     expect((r as { reason: string }).reason).toMatch(
-      /some products may be missing.*DEMO - PMAX - JACKETS \(166\.00\)/,
+      /some products may be missing.*DEMO - PMAX - OUTERWEAR \(166\.00\)/,
     );
     expect(runOne("PX05", build(CAMPS, quiet, { marker: capped(5) })).state).toBe("none_found");
   });
@@ -569,9 +569,9 @@ describe("failure paths: never 'none found' when we could not check", () => {
   it("the capped-read guard runs at the loss bar too (cutoff $30, loss bar $50, kept $40 / $30)", () => {
     const kept: Row[] = [
       {
-        campaign: BELTS,
+        campaign: MUGS,
         id: "shopify_us_2_1",
-        title: "Kept Belt Tan 85",
+        title: "Kept Mug Tan 85",
         cost: 40,
         conv: 1,
         value: 30,
@@ -580,7 +580,7 @@ describe("failure paths: never 'none found' when we could not check", () => {
     ];
     const r = runOne("PX05", build(CAMPS, kept, { marker: capped(30) }));
     expect(r.state).toBe("not_checkable");
-    expect((r as { reason: string }).reason).toMatch(/DEMO - PMAX {2}- BELTS \(loss bar 50\.00\)/);
+    expect((r as { reason: string }).reason).toMatch(/DEMO - PMAX {2}- STRAPS \(loss bar 50\.00\)/);
     expect(
       runOne("PX05", build(CAMPS, [{ ...must(kept[0]), value: 80 }], { marker: capped(30) })).state,
     ).toBe("none_found");
@@ -595,7 +595,7 @@ describe("failure paths: never 'none found' when we could not check", () => {
       {
         campaign: "PMax Mid",
         id: "shopify_us_3_1",
-        title: "Small Belt Tan 85",
+        title: "Small Mug Tan 85",
         cost: 20,
         conv: 0,
         color: "Tan",
@@ -664,7 +664,7 @@ describe("whole categories that lose money (app categoryRollup.test.ts numbers)"
     {
       campaign: JACKETS,
       id: "shopify_us_7000000000003_1",
-      title: "Men's Bomber Jacket Bram Cognac Demo Brand L",
+      title: "Men's Bomber Jacket Tove Cognac Demo Brand L",
       cost: 197,
       conv: 1,
       value: 31,
@@ -673,7 +673,7 @@ describe("whole categories that lose money (app categoryRollup.test.ts numbers)"
     },
   ];
   const BAG = (k: number, cost: number, conv = 0, value = 0): Row => ({
-    campaign: BELTS,
+    campaign: MUGS,
     id: `shopify_us_76000000000${k}_1`,
     title: `Bag Number ${k} Tan`,
     cost,
@@ -683,23 +683,23 @@ describe("whole categories that lose money (app categoryRollup.test.ts numbers)"
     seg: ["bags", null],
     feed: "Bags",
   });
-  const belts: Row[] = [
+  const mugs: Row[] = [
     BAG(1, 100),
     BAG(2, 90),
     BAG(3, 160, 4, 900),
     {
-      campaign: BELTS,
+      campaign: MUGS,
       id: "shopify_us_7100000000001_1",
-      title: "Demo Belt Cognac 85",
+      title: "Demo Mug Cognac 85",
       cost: 300,
       conv: 10,
       value: 1500,
       color: "Cognac",
-      seg: ["belts", null],
-      feed: "Belts",
+      seg: ["mugs", null],
+      feed: "Mugs",
     },
   ];
-  const px05 = fired(runOne("PX05", build(CAMPS, [...mira, womenSeller, ...menswear, ...belts])));
+  const px05 = fired(runOne("PX05", build(CAMPS, [...mira, womenSeller, ...menswear, ...mugs])));
   const men = must(cardOf(px05, JACKETS, "category_loses_money"));
 
   it("Menswear in PMax Jackets: $532 spent, $31 in sales, ROAS 5%, the feed's spelling", () => {
@@ -745,10 +745,7 @@ describe("whole categories that lose money (app categoryRollup.test.ts numbers)"
       px05.filter((f) => f.facts.reason === "category_loses_money").map((f) => f.facts.category),
     ).toEqual(["Menswear"]);
     // Bags earns back its cost; its 0-sale bags ($100 >= $76) keep their own product finding
-    expect(listed(cardOf(px05, BELTS, "no_sale"))).toEqual([
-      "Bag Number 1 Tan",
-      "Bag Number 2 Tan",
-    ]);
+    expect(listed(cardOf(px05, MUGS, "no_sale"))).toEqual(["Bag Number 1 Tan", "Bag Number 2 Tan"]);
   });
 
   it("product type spelling: the feed's when it reads the same; Google category when no product type", () => {
@@ -815,10 +812,10 @@ describe("colour from product titles (no Merchant Center colour on live reads)",
     ).toBe(
       "women's sample demo jacket mira basic test plain simple neutral straight-cut snap-on light camel demo brand",
     );
-    expect(sizeStrippedTitle("Twin Belt Camel XL-105")).toBe("twin belt camel");
-    expect(sizeStrippedTitle("Twin Belt Black L/XL-100")).toBe("twin belt black");
-    expect(sizeStrippedTitle("Demo Belt Cognac 85")).toBe("demo belt cognac");
-    expect(sizeStrippedTitle("Demo Belt Cognac | Size 90")).toBe("demo belt cognac");
+    expect(sizeStrippedTitle("Duo Mug Camel XL-105")).toBe("duo mug camel");
+    expect(sizeStrippedTitle("Duo Mug Black L/XL-100")).toBe("duo mug black");
+    expect(sizeStrippedTitle("Demo Mug Cognac 85")).toBe("demo mug cognac");
+    expect(sizeStrippedTitle("Demo Mug Cognac | Size 90")).toBe("demo mug cognac");
     expect(sizeStrippedTitle("Bag Number 1 Tan")).toBe("bag number 1 tan");
   });
   it("Mira Light Camel and Light Blue sizes split by title; sizes of one colour stay one", () => {
@@ -836,9 +833,9 @@ describe("colour from product titles (no Merchant Center colour on live reads)",
   });
   it("Twin Camel XL-105 vs Twin Black L/XL-100 split; a title without a size stays as is", () => {
     const { items } = keysOf([
-      { id: "shopify_us_55_1", title: "Twin Belt Camel XL-105" },
-      { id: "shopify_us_55_2", title: "Twin Belt Camel S-85" },
-      { id: "shopify_us_55_3", title: "Twin Belt Black L/XL-100" },
+      { id: "shopify_us_55_1", title: "Duo Mug Camel XL-105" },
+      { id: "shopify_us_55_2", title: "Duo Mug Camel S-85" },
+      { id: "shopify_us_55_3", title: "Duo Mug Black L/XL-100" },
       { id: "shopify_us_66_1", title: "Plain Wallet" },
     ]);
     const k = items.map((i) => modelColourKey(i));
@@ -848,9 +845,9 @@ describe("colour from product titles (no Merchant Center colour on live reads)",
   });
   it("Merchant Center colour wins: a model with a colour keeps colours only; copies keep their own key", () => {
     const { items, fromTitle } = keysOf([
-      { id: "shopify_us_77_1", title: "Mira Belt Red 85", color: "Red" },
-      { id: "shopify_us_77_2", title: "Mira Belt Red 90" },
-      { id: "shopify_us_77_1-cp-demo", title: "Mira Belt copy" },
+      { id: "shopify_us_77_1", title: "Mira Mug Red 85", color: "Red" },
+      { id: "shopify_us_77_2", title: "Mira Mug Red 90" },
+      { id: "shopify_us_77_1-cp-demo", title: "Mira Mug copy" },
     ]);
     expect(fromTitle).toEqual([false, false, false]);
     expect(items[1]?.color ?? null).toBeNull();
@@ -998,7 +995,7 @@ describe("round 2: a product no running asset group can select now is already ou
     const card = must(cardOf(fired(r), JACKETS, "no_sale"));
     expect(listed(card).some((n) => /Light Camel/.test(n))).toBe(false);
     expect(card.facts).toMatchObject({ products: 2, campaign_product_spend: 415 });
-    expect(card.note).toMatch(/not judged, already out: .* in DEMO - PMAX - JACKETS \(1\)/);
+    expect(card.note).toMatch(/not judged, already out: .* in DEMO - PMAX - OUTERWEAR \(1\)/);
   });
 
   it("PX05: every product still selectable = judged as before (Light Camel on the card)", () => {
@@ -1096,7 +1093,7 @@ describe("round 2: a product no running asset group can select now is already ou
   });
 
   // round 3 (bug B): SH20 skips a product NO live campaign can show now. The second PMax
-  // campaign's one group takes custom label 1 "belts"; the Shopping campaign sells another
+  // campaign's one group takes custom label 1 "mugs"; the Shopping campaign sells another
   // feed label of the same Merchant Center account
   const sh20 = (
     excluded: (r: Row) => boolean,
@@ -1117,7 +1114,7 @@ describe("round 2: a product no running asset group can select now is already ou
         pmaxListingGroups: [
           ...(base.data.pmaxListingGroups ?? []),
           { ...at("11", "SUBDIVISION", {}), asset_group_id: "601" },
-          { ...at("12", "UNIT_INCLUDED", label("INDEX1", "belts"), "11"), asset_group_id: "601" },
+          { ...at("12", "UNIT_INCLUDED", label("INDEX1", "mugs"), "11"), asset_group_id: "601" },
           { ...at("13", "UNIT_EXCLUDED", label("INDEX1"), "11"), asset_group_id: "601" },
         ],
         shoppingSettings: [
@@ -1219,18 +1216,18 @@ describe("review fixes: feed title first, missed size words, split only on a col
   it("no colour slot (a size word left, a renamed product): the model stays whole", () => {
     expect(titlesSplitByColour(["shirt white petite", "shirt white"])).toBe(false);
     expect(titlesSplitByColour(["shirt white 10 wide", "shirt white 12 wide"])).toBe(false);
-    expect(titlesSplitByColour(["old demo belt cognac", "demo belt cognac new"])).toBe(false);
-    expect(titlesSplitByColour(["twin belt camel", "twin belt black"])).toBe(true);
+    expect(titlesSplitByColour(["old demo mug cognac", "demo mug cognac new"])).toBe(false);
+    expect(titlesSplitByColour(["duo mug camel", "duo mug black"])).toBe(true);
   });
   it("Demo Cognac XS with an old saved title and M with the new title stay one group (current feed title)", () => {
     const rows: Row[] = [
       {
-        campaign: BELTS,
+        campaign: MUGS,
         id: "shopify_us_7700000000001_1",
-        title: "Demo Belt Cognac Leather XS",
+        title: "Demo Mug Cognac Leather XS",
         cost: 50,
       },
-      { campaign: BELTS, id: "shopify_us_7700000000001_2", title: "Demo Belt Cognac M", cost: 40 },
+      { campaign: MUGS, id: "shopify_us_7700000000001_2", title: "Demo Mug Cognac M", cost: 40 },
     ];
     const base = build(CAMPS, rows);
     // the feed (shopping_product) now titles both sizes the new way
@@ -1240,7 +1237,7 @@ describe("review fixes: feed title first, missed size words, split only on a col
         ...base.data,
         products: rows.map((r) => ({
           product_id: r.id,
-          title: r.id.endsWith("_1") ? "Demo Belt Cognac XS" : "Demo Belt Cognac M",
+          title: r.id.endsWith("_1") ? "Demo Mug Cognac XS" : "Demo Mug Cognac M",
           cost_micros: r.cost * 1e6,
           clicks: 10,
           impressions: 500,
@@ -1249,7 +1246,7 @@ describe("review fixes: feed title first, missed size words, split only on a col
         })),
       },
     };
-    const f = must(cardOf(fired(runOne("PX05", input)), BELTS, "no_sale"));
+    const f = must(cardOf(fired(runOne("PX05", input)), MUGS, "no_sale"));
     expect(f.facts).toMatchObject({ products: 1, variants: 2, campaign_product_spend: 90 });
   });
 });

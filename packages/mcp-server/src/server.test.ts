@@ -554,7 +554,9 @@ describe("error path", () => {
     expect(text).toMatch(
       /Tracking, Account settings, Budget & bidding, Search & keywords, Ads & landing pages, Performance Max, Shopping & products, Audiences & devices, Demand Gen, Trends/,
     );
-    expect(text).toMatch(/Urgent\/Important\/Minor\/Note/);
+    expect(text).toMatch(/Urgent\/This week\/Just so you know/);
+    expect(text).toMatch(/Summary \(5-8 bullets, most real spend first\)/);
+    expect(text).not.toMatch(/Important|Minor|biggest money/);
     expect(text).toMatch(/Good news/);
     expect(text).toMatch(/Return on ad spend as '\$2\.43 per \$1'/);
     expect(text).toMatch(/Good news \(incl\. positive findings\)/);

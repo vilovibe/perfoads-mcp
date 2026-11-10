@@ -65,7 +65,7 @@ const amount = (v: unknown): number | null => {
 };
 
 /**
- * The name a parent product goes by: the words its sizes and colours share ("... Belt with
+ * The name a parent product goes by: the words its sizes and colours share ("... Mug with
  * Gold Buckle for Jeans & Dresses", not "... - Gold, 4 cm"). Titles that start differently
  * (a second feed's word order) are left out; a lone title is used as it is.
  */

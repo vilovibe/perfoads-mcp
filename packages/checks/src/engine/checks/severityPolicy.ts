@@ -447,6 +447,16 @@ export const SEVERITY_POLICY: Readonly<Record<string, CheckSeverityPolicy>> = {
     opportunity: true,
     emit: true,
   },
+  /** M18 AS24 (J40) · a spending account with fewer than 5 changes a month for 2+ months · warning · impact: IMP_NONE */
+  AS24: {
+    maxSeverity: "warning",
+    sheetBase: "warning",
+    integrity: false,
+    structural: false,
+    positive: false,
+    opportunity: false,
+    emit: true,
+  },
   AS14: {
     maxSeverity: "info",
     integrity: false,
@@ -670,6 +680,15 @@ export const SEVERITY_POLICY: Readonly<Record<string, CheckSeverityPolicy>> = {
     structural: false,
     positive: false,
     opportunity: true,
+    emit: true,
+  },
+  /** M18 SK42 (J41) · a live Search ad mixes Title Case and sentence case headlines · opportunity · impact: IMP_STRUCTURAL */
+  SK42: {
+    maxSeverity: "opportunity",
+    integrity: false,
+    structural: true,
+    positive: false,
+    opportunity: false,
     emit: true,
   },
   /** PX01 · ceiling warning · impact: IMP_WASTE_90 */
@@ -1246,6 +1265,42 @@ export const SEVERITY_POLICY: Readonly<Record<string, CheckSeverityPolicy>> = {
   },
   /** SH24 · ceiling info */
   SH24: {
+    maxSeverity: "info",
+    integrity: false,
+    structural: false,
+    positive: false,
+    opportunity: true,
+    emit: true,
+  },
+  /** M15 SH26 · ceiling warning · a store ranking factor is weak */
+  SH26: {
+    maxSeverity: "warning",
+    integrity: false,
+    structural: false,
+    positive: false,
+    opportunity: true,
+    emit: true,
+  },
+  /** M15 SH27 · ceiling warning · best sellers with fewer than 3 photos */
+  SH27: {
+    maxSeverity: "warning",
+    integrity: false,
+    structural: false,
+    positive: false,
+    opportunity: true,
+    emit: true,
+  },
+  /** M15 SH28 · ceiling warning · products with no product type (barcodes are not checked here) */
+  SH28: {
+    maxSeverity: "warning",
+    integrity: false,
+    structural: false,
+    positive: false,
+    opportunity: true,
+    emit: true,
+  },
+  /** M15 SH29 · ceiling info · best sellers with no product highlights or details */
+  SH29: {
     maxSeverity: "info",
     integrity: false,
     structural: false,

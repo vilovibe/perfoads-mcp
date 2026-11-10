@@ -26,7 +26,7 @@ import type { KeywordNode } from "../model/nodes/KeywordNode.js";
 import type { SearchTermNode } from "../model/nodes/SearchTermNode.js";
 import type { NegativeEntry } from "../model/nodes/NegativeListNode.js";
 import { CLAIM_KEYS } from "../registry/claimKeys.js";
-import { EXTENSION_MINIMUMS } from "../registry/thresholds.js";
+import { EXTENSION_MINIMUMS, SEARCH_EXTENSION_BAR } from "../registry/thresholds.js";
 import { overrideClassOf } from "../model/buildSearchTree.js";
 import { UTM_CLASS_NAMES, type UtmClass } from "../model/nodes/LandingPageNode.js";
 import { brandMatcherOfModel, containsBrandName } from "../model/context.js";
@@ -500,7 +500,7 @@ const SK08 = defineCheck({
 // ---------------------------------------------------------------------------
 
 /**
- * SK09. R6 (a live shop, 2 Nov): 9 "opportunities" each on 1 sale, "leather belts" twice (two
+ * SK09. R6 (a live shop, 2 Nov): 9 "opportunities" each on 1 sale, "leather mugs" twice (two
  * campaigns), 4 brand searches the Brand campaign already catches. Now: one line per search
  * (rows summed over campaigns and ad groups), at least `convertingTermMinConv` sales, and
  * never a brand search (the brand name, or a search only brand campaigns ran on). Sales
@@ -1166,6 +1166,21 @@ function servingCountOfType(
   return Number.isFinite(thinnest) ? thinnest : atCampaign;
 }
 
+/**
+ * M18 (J33): the minimum a campaign of this type is tested against. Search
+ * sitelinks and callouts use the Search bar (8 and 10, SEARCH_EXTENSION_BAR);
+ * every other type keeps rule 246's minimum.
+ */
+function minimumFor(campaignType: string, type: string): number | undefined {
+  if (campaignType === "SEARCH" && (type === "SITELINK" || type === "CALLOUT"))
+    return SEARCH_EXTENSION_BAR[type].min;
+  return EXTENSION_MINIMUMS[type];
+}
+
+/** M18 (J33): business name, logo and images are not in the snapshot for Search, so SK16 says it did not look at them. */
+export const SK16_NOT_CHECKED_NOTE =
+  "Business name, logo and image assets are not in our data, so they were not checked.";
+
 const SK16 = defineCheck({
   id: "SK16",
   claimKey: CLAIM_KEYS.EXTENSIONS_TYPE_MISSING,
@@ -1176,7 +1191,7 @@ const SK16 = defineCheck({
   requires: ["adExtensions", "campaigns"],
   impactFormula: "IMP_STRUCTURAL",
   noneFoundMeans:
-    "Each campaign carries the extension types it can serve, in the numbers Google asks for.",
+    "Each campaign carries the extension types it can serve, in the numbers we ask for (Search: 8 sitelinks and 10 callouts).",
   run(ctx) {
     const blocked = gateOnData(ctx, this.requires);
     if (blocked) return blocked;
@@ -1214,7 +1229,7 @@ const SK16 = defineCheck({
       const short: { type: string; have: number; want: number }[] = [];
       for (const type of expected) {
         if (!present.has(type)) continue;
-        const want = EXTENSION_MINIMUMS[type];
+        const want = minimumFor(campaign.attrs.type, type);
         if (want == null) continue; // PROMOTION carries no minimum in rule 246 or rule 91
         const have = servingCountOfType(campaign, type, ctx.model.children.extensions);
         if (have < want) short.push({ type, have, want });
@@ -1239,6 +1254,23 @@ const SK16 = defineCheck({
             missing_types: missing.join(", ") || null,
             below_minimum: short.map((x) => `${x.type} ${x.have} of ${x.want}`).join(", ") || null,
             present_types: [...present].sort().join(", ") || null,
+            // M18 (J33): the fact card's "sitelinks 4 -> 8" (Search only)
+            ...(campaign.attrs.type === "SEARCH"
+              ? {
+                  sitelinks_have: servingCountOfType(
+                    campaign,
+                    "SITELINK",
+                    ctx.model.children.extensions,
+                  ),
+                  sitelinks_want: SEARCH_EXTENSION_BAR.SITELINK.min,
+                  callouts_have: servingCountOfType(
+                    campaign,
+                    "CALLOUT",
+                    ctx.model.children.extensions,
+                  ),
+                  callouts_want: SEARCH_EXTENSION_BAR.CALLOUT.min,
+                }
+              : {}),
             campaign_type: campaign.attrs.type,
             spend: campaign.windows.m90.cost,
           },
@@ -1249,7 +1281,7 @@ const SK16 = defineCheck({
     const joined = campaignExtensions(ctx).length;
     const pop = ctx.metrics.population.get("adExtensions");
     const accountLevel = ctx.model.children.extensions.length;
-    const note = `${joined} of ${pop?.rows ?? joined} assets read belong to a campaign of this account${accountLevel > 0 ? `; ${accountLevel} account-level asset(s) count for each campaign with none of that type of its own` : ""}`;
+    const note = `${joined} of ${pop?.rows ?? joined} assets read belong to a campaign of this account${accountLevel > 0 ? `; ${accountLevel} account-level asset(s) count for each campaign with none of that type of its own` : ""}. ${SK16_NOT_CHECKED_NOTE}`;
     return findings.length > 0
       ? { state: "fires", findings: findings.map((f) => ({ ...f, note })) }
       : { state: "none_found", population: eligible.length, note };
@@ -1553,7 +1585,7 @@ export const SK20_PAUSED_COVER_SHARE = 0.95;
 /**
  * N1: the campaigns that fed a page (clicks per campaign, read for every type). Shopping and
  * Performance Max pages carry no ad id, so a page only a paused PMax campaign fed (NL:
- * .de/collections/belts, all 1,062 clicks from the paused DE PMax v2) is known here.
+ * .de/collections/mugs, all 1,062 clicks from the paused DE PMax v2) is known here.
  * null = the split was not read or holds no clicks.
  */
 function pageCampaigns(
@@ -1579,7 +1611,7 @@ function pageCampaigns(
 /**
  * SK20. R5: when the account tracks sales value, a page is judged on its return per $1
  * against the account's, never on its sale count: the jacket page made $1,217 on
- * $599 ($2.03 per $1) from 5 sales and was called waste because a jacket costs 2-3 belts.
+ * $599 ($2.03 per $1) from 5 sales and was called waste because a jacket costs 2-3 mugs.
  * Sale count (conversion rate) is the test only when no value is tracked.
  */
 const SK20 = defineCheck({
@@ -2745,7 +2777,10 @@ const SK32 = defineCheck({
     const idle: string[] = [];
     for (const c of withSettings) {
       const ns = c.attrs.networkSettings!;
-      const partners = ns.targetSearchNetwork === true;
+      // M7 (K13): a brand Shopping campaign with search partners on is not flagged.
+      const partners =
+        ns.targetSearchNetwork === true &&
+        !(c.attrs.type === "SHOPPING" && c.attrs.layerRole === "brand");
       const display = c.attrs.type === "SEARCH" && ns.targetContentNetwork === true;
       if (!partners && !display) continue;
       const split = c.attrs.networkSpend ?? null;
@@ -3260,6 +3295,38 @@ const SK35 = defineCheck({
   },
 });
 
+// ---------------------------------------------------------------------------
+// SK42 — ads.headline_case_mixed (M18, J41)
+// ---------------------------------------------------------------------------
+
+/**
+ * SK42: a live responsive search ad whose headlines mix Title Case and sentence
+ * case. M18 fix round: the style is a judgement (German and Dutch nouns start with a
+ * capital by grammar; brand casing like "iPhone" is not a mix), so the app asks its AI
+ * ad text judge. The connector has no AI read and never guesses by code: always not run.
+ */
+const SK42 = defineCheck({
+  id: "SK42",
+  claimKey: CLAIM_KEYS.ADS_HEADLINE_CASE_MIXED,
+  title: "a live Search ad mixes Title Case and sentence case headlines",
+  clientLabel: "one writing style per Search ad",
+  group: "search",
+  metrics: ["C.spend"],
+  confounders: [],
+  requires: ["ads", "adGroups"],
+  impactFormula: "IMP_STRUCTURAL",
+  noneFoundMeans: "Each live Search ad uses one headline style: Title Case or sentence case.",
+  run() {
+    return {
+      state: "not_checkable",
+      reason:
+        "the headline style needs an AI read of the ad text (German or Dutch nouns and brand names are capitalised on purpose); the connector does not judge it by code",
+      table: "ads",
+      category: "our_gap",
+    };
+  },
+});
+
 export const SEARCH_CHECKS: CheckDefinition[] = [
   SK06,
   SK07,
@@ -3285,4 +3352,5 @@ export const SEARCH_CHECKS: CheckDefinition[] = [
   SK32,
   SK33,
   SK35,
+  SK42,
 ];

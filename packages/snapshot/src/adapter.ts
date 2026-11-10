@@ -528,6 +528,8 @@ export const TABLES: readonly TableSpec[] = [
           target_roas: num(r.targetRoas),
           target_cpa: num(r.targetCpa),
           non_removed_campaign_count: num(r.nonRemovedCampaignCount),
+          // null = an older snapshot or a type with no cap (AS02 then leaves shared brand Shopping unjudged)
+          cpc_bid_ceiling: num(r.maxCpc),
         })),
     // the reader returns the first 50 strategies: Google's count says whether that is all
     total: (s) => partRows(s, "bidding_strategies"),
@@ -692,6 +694,36 @@ export const TABLES: readonly TableSpec[] = [
       const vt = new Map(
         (conv ? arrayOf(detailOf(conv).viewThrough) : []).map((r) => [str(r.campaignId), r]),
       );
+      // purchases by where they came from (a click, or a view: engaged view + impression);
+      // null when the part was not read in full, never "all clicks"
+      const splitPart = conv ? partOf(conv, "purchase_split") : undefined;
+      const splitRead =
+        splitPart !== undefined &&
+        splitPart.status === "ok" &&
+        !splitPart.capped &&
+        !splitPart.time_cut;
+      const split = new Map<string, { click: number; view: number; unnamed: number }>();
+      if (splitRead && conv)
+        for (const r of arrayOf(detailOf(conv).purchaseSplit)) {
+          const cid = str(r.campaignId);
+          if (!cid) continue;
+          const t = split.get(cid) ?? { click: 0, view: 0, unnamed: 0 };
+          const n = num(r.conversions) ?? 0;
+          const type = str(r.eventType);
+          if (type === "CLICK" || type === "INTERACTION") t.click += n;
+          else if (type === "ENGAGED_VIEW" || type === "IMPRESSION") t.view += n;
+          else t.unnamed += n;
+          split.set(cid, t);
+        }
+      const splitOf = (cid: string) => {
+        if (!splitRead) return {};
+        const t = split.get(cid) ?? { click: 0, view: 0, unnamed: 0 };
+        return {
+          purchase_click_conversions: t.click,
+          purchase_view_conversions: t.view,
+          purchase_unnamed_conversions: t.unnamed,
+        };
+      };
       const urlPart = partOf(s, "url_exclusions");
       const urlRead =
         urlPart !== undefined && urlPart.status === "ok" && !urlPart.capped && !urlPart.time_cut;
@@ -737,6 +769,7 @@ export const TABLES: readonly TableSpec[] = [
           // B13: the share's base is conversions + view-through, not all_conversions
           conversions: v ? num(v.conversions) : null,
           all_conversions: v ? num(v.allConversions) : null,
+          ...splitOf(cid),
         });
       }
       // a campaign with view-through numbers but no controls row (removed since) keeps them
@@ -747,6 +780,7 @@ export const TABLES: readonly TableSpec[] = [
             view_through_conversions: num(v.viewThroughConversions),
             conversions: num(v.conversions),
             all_conversions: num(v.allConversions),
+            ...splitOf(cid),
           });
       return out;
     },

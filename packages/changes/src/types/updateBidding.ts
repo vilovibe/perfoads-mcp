@@ -80,7 +80,7 @@ const words = (t: string): string => WORDS[t] ?? t;
  * with too few recent conversions (biddingError NOT_ENOUGH_CONVERSIONS, "Customer does not
  * have enough conversions to enable this feature"); its guidance runs from about 15
  * (Search / Shopping) to 30-50 (Demand Gen), so this is the conservative rung. The same
- * number as @perfoads/checks DEFAULT_SETTINGS.bidding.targetRoasMinConv30d, which BB14
+ * number as @perfoads/checks DEFAULT_SETTINGS.bidding.valueBiddingMinConv30d, which BB14
  * gates its advice on (a mcp-server test keeps them equal).
  */
 export const VALUE_BIDDING_MIN_CONV_30D = 30;

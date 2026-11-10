@@ -7,6 +7,7 @@ import type { CheckResult } from "./engine/checks/types.js";
 import { confoundersFor } from "./engine/interactions/matrix.js";
 import { DEFAULT_CONFOUNDER_THRESHOLDS } from "./engine/interactions/types.js";
 import { runChecks } from "./api.js";
+import { DEFAULT_SETTINGS } from "./engine/settings.js";
 import {
   buildInput,
   campaignRows,
@@ -264,9 +265,9 @@ describe("BB04 bid target ahead of the data", () => {
 });
 
 describe("BB04 verdict follows the 90-day result against the target", () => {
-  // a Jackets PMax on a 300% target, 29.94 sales in the last 30 days (bar 30) and
-  // 101.94 over the 90 days, $100 a day at 333%: the data backs the target so far
-  const jackets = (valuePerDay: number, conv30 = 29.94, conv90 = 101.94): FixtureOptions => {
+  // a Jackets PMax on a 300% target, 49.94 sales in the last 30 days (sales-value bar 50) and
+  // 161.94 over the 90 days, $100 a day at 333%: the data backs the target so far
+  const jackets = (valuePerDay: number, conv30 = 49.94, conv90 = 161.94): FixtureOptions => {
     const spec: CampaignSpec = {
       id: "11",
       name: "PMax - Jackets",
@@ -290,25 +291,27 @@ describe("BB04 verdict follows the 90-day result against the target", () => {
     const f = findingsOf(run("BB04", jackets(333)))[0];
     expect(f).toBeDefined();
     expect(f?.maxSeverity).toBe("info");
-    expect(f?.facts).toMatchObject({ target_roas: 3, conv_bar_30d: 30, target_met_90d: true });
+    expect(f?.facts).toMatchObject({ target_roas: 3, conv_bar_30d: 50, target_met_90d: true });
     expect(f?.facts.result_90d).toBeCloseTo(3.33, 2);
     expect(f?.note).toBe(
-      "the campaign's last 90 days meet its target (333% return against a 300% target), so the data supports the target so far; only the last 30 days' sales are under the guideline of 30",
+      "the campaign's last 90 days meet its target (333% return against a 300% target), so the data supports the target so far; only the last 30 days' sales are under the guideline of 50",
     );
   });
-  it("250% over 90 days against 300%: the warning stays", () => {
+  it("250% over 90 days against 300%: the warning stays, and says the bar in one sentence", () => {
     const f = findingsOf(run("BB04", jackets(250)))[0];
     expect(f).toBeDefined();
     expect(f?.maxSeverity).toBeUndefined();
     expect(f?.facts.target_met_90d).toBeUndefined();
-    expect(f?.note).toBeUndefined();
+    expect(f?.note).toBe(
+      "Google may hold back spend until about 50 sales a month for a sales-value target (about 30 for a cost-per-sale target), and this campaign had about 49.9 in the last 30 days",
+    );
   });
   it("30 sales over 90 days (3 in the last 30) meets the target but is under 3x the bar: the warning stays", () => {
     const f = findingsOf(run("BB04", jackets(333, 3, 30)))[0];
     expect(f).toBeDefined();
     expect(f?.maxSeverity).toBeUndefined();
     expect(f?.facts.target_met_90d).toBeUndefined();
-    expect(f?.note).toBeUndefined();
+    expect(f?.note).toMatch(/^Google may hold back spend until about 50 sales a month/);
   });
 });
 
@@ -349,6 +352,66 @@ describe("BB05 bid target choking delivery", () => {
     expect(r.state === "not_checkable" && r.reason).toBe(
       "no campaign has both a target return on ad spend (tROAS) and a budget that could be read",
     );
+  });
+});
+
+describe("M13: one target rule (cost-per-sale from 30, sales value from 50, Google's value minimum 30)", () => {
+  // conv is per day: 0.8 a day = 24 in 30 days, 1.2 = 36, 1.8 = 54
+  it("the defaults: target CPA 30, target ROAS 50, value bidding 30", () => {
+    expect(DEFAULT_SETTINGS.bidding).toMatchObject({
+      targetCpaMinConv30d: 30,
+      targetRoasMinConv30d: 50,
+      valueBiddingMinConv30d: 30,
+    });
+  });
+  it("BB04: a target CPA on 24 sales is ahead of the data, on 36 it is not", () => {
+    const at = (conv: number) =>
+      run("BB04", one({ strategy: "TARGET_CPA", targetCpa: 20, conv, value: 0 }));
+    const f = findingsOf(at(0.8))[0];
+    expect(f?.facts.conv_bar_30d).toBe(30);
+    expect(f?.note).toBe(
+      "Google may hold back spend until about 30 sales a month for a cost-per-sale target (about 50 for a sales-value target), and this campaign had about 24 in the last 30 days",
+    );
+    expect(state(at(1.2))).toBe("none_found");
+  });
+  it("BB04: a target ROAS on 36 sales is ahead of the data (bar 50)", () => {
+    const f = findingsOf(
+      run("BB04", one({ strategy: "TARGET_ROAS", targetRoas: 4, conv: 1.2 })),
+    )[0];
+    expect(f?.facts.conv_bar_30d).toBe(50);
+  });
+  it("BB06: the bar is the target the campaign would get", () => {
+    const at = (strategy: string, conv: number) => run("BB06", one({ strategy, conv }));
+    // Maximize conversion value -> a sales-value target at 50
+    expect(state(at("MAXIMIZE_CONVERSION_VALUE", 1.2))).toBe("none_found");
+    const v = findingsOf(at("MAXIMIZE_CONVERSION_VALUE", 1.8))[0];
+    expect(v?.facts.conv_bar_30d).toBe(50);
+    expect(v?.note).toBe(
+      "a target needs about 50 sales a month for a sales-value target (about 30 for a cost-per-sale target), and this campaign had about 54 in the last 30 days",
+    );
+    // Maximize conversions -> a cost-per-sale target at 30
+    expect(state(at("MAXIMIZE_CONVERSIONS", 0.8))).toBe("none_found");
+    const c = findingsOf(at("MAXIMIZE_CONVERSIONS", 1.2))[0];
+    expect(c?.facts.conv_bar_30d).toBe(30);
+    expect(c?.note).toMatch(/^a target needs about 30 sales a month for a cost-per-sale target/);
+    // other bidding moves to value bidding with no target first: Google's own minimum
+    const o = findingsOf(at("MAXIMIZE_CLICKS", 1.2))[0];
+    expect(o?.facts.conv_bar_30d).toBe(30);
+    expect(o?.note).toBe(
+      "moving to value bidding with no target needs about 30 sales a month (Google's own minimum), and a target after that about 50 sales a month for a sales-value target (about 30 for a cost-per-sale target), and this campaign had about 36 in the last 30 days",
+    );
+  });
+  it("BB14 reads Google's value minimum, never the target ROAS bar", () => {
+    const f = findingsOf(
+      run(
+        "BB14",
+        one(
+          { strategy: "MAXIMIZE_CONVERSIONS", conv: 1.2 },
+          { settings: { bidding: { targetRoasMinConv30d: 100 } } },
+        ),
+      ),
+    )[0];
+    expect(f?.facts.below_value_minimum).toBeUndefined();
   });
 });
 
@@ -653,7 +716,7 @@ describe("BB14 count bidding while value is tracked", () => {
       /no 30-day conversion series for 1 /,
     );
   });
-  it("at the minimum it fires as a normal finding; the minimum follows settings.bidding.targetRoasMinConv30d", () => {
+  it("at the minimum it fires as a normal finding; the minimum follows settings.bidding.valueBiddingMinConv30d, never the target ROAS bar", () => {
     const at = findingsOf(run("BB14", one({ strategy: "MAXIMIZE_CONVERSIONS", conv: 1 })))[0];
     expect(at?.maxSeverity).toBeUndefined();
     expect(at?.facts.below_value_minimum).toBeUndefined();
@@ -662,7 +725,7 @@ describe("BB14 count bidding while value is tracked", () => {
         "BB14",
         one(
           { strategy: "MAXIMIZE_CONVERSIONS", conv: 1 },
-          { settings: { bidding: { targetRoasMinConv30d: 31 } } },
+          { settings: { bidding: { valueBiddingMinConv30d: 31 } } },
         ),
       ),
     )[0];

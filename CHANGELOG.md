@@ -2,7 +2,38 @@
 
 All notable changes to this project. Versions follow semver; all packages are released together.
 
-## 0.2.0-alpha.0 (unreleased)
+## Unreleased
+
+Not on npm yet. 168 checks.
+
+### Added
+
+- **Search extensions bar: 8 sitelinks, 10 callouts.** SK16 now asks each live Search campaign for at least 8 sitelinks and 10 callouts (Google shows up to 4 of each at once, so it needs more to rotate). Performance Max keeps its own minimums. The finding says how many the campaign has and how many it needs. Business name, logo and image assets are not in the snapshot, so SK16 says they were not checked.
+- **AS24: an account nobody works on.** A spending account with fewer than 5 changes made by people in each of its last 2+ months (30-day blocks of the change history). Changes Google's own automation made do not count. With under 2 readable months it says "not enough data", never "none found".
+- **SK42: one headline style per Search ad.** A live Search ad that mixes Title Case and sentence case headlines; the finding lists the lines in the smaller style. Brand words never decide the style.
+- **SH26: delivery and return settings holding listings back.** Merchant Center handling time, delivery time or return cost that can push Shopping listings down.
+- **SH27: top sellers with fewer than 3 photos.**
+- **SH28: products with no product type.** Barcodes (GTIN, MPN) are not checked here; the finding says so.
+- **SH29: top sellers with no product highlights or product details.**
+- **AS02 reads more brand bidding.** AS02 now also flags brand Search on Maximize conversions or conversion value with no target, and says when a brand Shopping campaign on a shared bidding strategy was not judged.
+- **PX02 says whether there is a brand Search campaign.** The finding names it, or notes "no brand Search campaign found".
+- **Brand campaigns are told apart by more than the name.** A Search or Shopping campaign whose clicks are mostly brand searches counts as brand too. SH12 no longer counts a brand campaign selling the same items as a non-brand one, and SK32 no longer flags search partners on a brand Shopping campaign.
+
+### Fixed
+
+- **One target rule for bid targets.** A target CPA (cost per sale) is backed by data from about 30 conversions in 30 days (`bidding.targetCpaMinConv30d`, was 15), a target ROAS (sales value) from about 50 (`bidding.targetRoasMinConv30d`, was 30). Google's own minimum for a switch to value bidding is its own setting, `bidding.valueBiddingMinConv30d` (30). BB06 "ready for a target" uses the bar of the target the campaign would get, or Google's minimum on other bidding. BB04 and BB06 say the bar in one sentence.
+- **MI06 judges purchases by click or view.** Where the campaign has enough purchases, MI06 reads how many came from a click and how many from a view, on one bar: 9 in 10 or more from clicks is fine, 2 in 10 or more from views is flagged, in between is a note. A purchase type Google does not name is "could not check", never clean. With too few purchases it keeps the older view-through read.
+- **VD04 uses the same 20% view bar as MI06** (`video.viewThroughSharePct`, was 30), and reads the click or view split where there is one.
+- **No guessed money in `run_checks`.** Findings no longer carry a per-month, wasted or at-risk estimate, and there is no priced total. The output shows the real spend read in the period (`spendInPeriod`) with its dates.
+- **Spend says "not read" when it was not read.** If no campaign cost could be read, the spend line says "not read", never 0.
+
+## 0.2.0-alpha.1 (2026-11-04)
+
+Published to npm. No separate notes were kept for it; it carries the changes of 0.2.0-alpha.0. 162 checks.
+
+## 0.2.0-alpha.0 (2026-11-03)
+
+Published to npm.
 
 ### Added
 
@@ -12,15 +43,15 @@ All notable changes to this project. Versions follow semver; all packages are re
 
 ### Fixed
 
-- **No switch to value bidding under Google's conversion minimum.** Google refuses Maximize conversion value (with or without a target ROAS) on a campaign with too few recent conversions. BB14 now advises the switch only when the campaign has at least `bidding.targetRoasMinConv30d` (30) conversions in the last 30 days. Under it, BB14 gives a Note of its own for that campaign (keep the current bidding until it has about 30 sales in 30 days; no money, no change offered), never a clean result; with no 30-day series it is not run. `update_bidding` refuses a switch into value bidding from a strategy that is not value bidding under the same 30 before Google is asked; Target ROAS to Maximize conversion value with no target, and an undo, are not gated.
+- **No switch to value bidding under Google's conversion minimum.** Google refuses Maximize conversion value (with or without a target ROAS) on a campaign with too few recent conversions. BB14 now advises the switch only when the campaign has at least `bidding.valueBiddingMinConv30d` (30) conversions in the last 30 days. Under it, BB14 gives a Note of its own for that campaign (keep the current bidding until it has about 30 sales in 30 days; no money, no change offered), never a clean result; with no 30-day series it is not run. `update_bidding` refuses a switch into value bidding from a strategy that is not value bidding under the same 30 before Google is asked; Target ROAS to Maximize conversion value with no target, and an undo, are not gated.
 
 ### Removed
 
 - **Google's own suggestions ("recommendations").** They are no longer part of PerfoAds MCP: the `apply_recommendation` change type, the `get_recommendations` read tool, check AS05 (pending Google recommendations), check SH07 (price above Google's suggested price; now 160 checks), Google's suggested-budget and suggested-price fields from the check model, the snapshot's `recommendations` section, `recommendation` in `query_gaql`, and the ads client's recommendation apply/dismiss calls. Kept: check AS04 (warns when Google auto-applies changes) and the change-history checks that spot auto-applied changes.
 
-## 0.1.0-alpha.0 (unreleased)
+## 0.1.0-alpha.0
 
-First alpha. Not published to npm yet.
+First alpha. Never published to npm.
 
 ### Added
 

@@ -123,7 +123,7 @@ describe("brand gate", () => {
 
 describe("learning-age gate", () => {
   it("holds a verdict on a campaign younger than the learning age, citing its age", () => {
-    const input = buildInput({ campaigns: [{ id: "11", ...ready, conv: 5, days: 9 }] });
+    const input = buildInput({ campaigns: [{ id: "11", ...ready, conv: 6, days: 9 }] });
     const r = runOne("BB06", input);
     expect(r.state).toBe("fires");
     expect(findingsOf(r)).toHaveLength(0);

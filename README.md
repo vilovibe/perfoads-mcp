@@ -2,7 +2,7 @@
 
 # PerfoAds MCP
 
-A self-hosted MCP server that works with Google Ads. It lets an AI assistant (Claude Desktop, Claude Code, Cursor and other MCP apps) **read** your Google Ads accounts, run **162 deterministic account checks**, and **change things only with your approval and within limits you set** in a policy file.
+A self-hosted MCP server that works with Google Ads. It lets an AI assistant (Claude Desktop, Claude Code, Cursor and other MCP apps) **read** your Google Ads accounts, run **168 deterministic account checks**, and **change things only with your approval and within limits you set** in a policy file.
 
 PerfoAds MCP works with Google Ads. It is not made, endorsed or supported by Google (not a Google product). It works with the Google Ads API through **your own** Google Cloud project and your own sign-in; nothing goes through anyone else's servers.
 
@@ -10,7 +10,7 @@ Package and CLI: `perfoads-mcp`. License: Apache-2.0. Status: early alpha. On np
 
 ## Work with Paweł
 
-The checks say what is wrong: the evidence, how serious it is and the money it wastes. They do not say how to fix it. Want fixes, not just findings? PerfoAds adds fix plans; Paweł Wilk offers a free 1-hour call - perfoads.com
+The checks say what is wrong: the evidence, how serious it is and the real spend behind it. They do not say how to fix it. Want fixes, not just findings? PerfoAds adds fix plans; Paweł Wilk offers a free 1-hour call - perfoads.com
 
 ## The safety promise
 
@@ -111,7 +111,7 @@ Approval paths and `approval_mode`: see [docs/HARDENED-SETUP.md](docs/HARDENED-S
 
 ## The policy file
 
-`policy.yaml` in the settings folder decides which accounts the AI may read and change and how far: per-account spend limits in the account's currency, budget and target step limits, writes per minute and day, tiers per change type (`auto`, `confirm`, `blocked`), brand terms that are never negated, a Google Ads operations reserve for changes, and a kill switch. It is re-read on every check, and no tool can edit it.
+`policy.yaml` in the settings folder decides which accounts the AI may read and change and how far: per-account spend limits in the account's currency, budget and target step limits, writes per minute and day, tiers per change type (`auto`, `confirm`, `blocked`), brand terms that are never negated (brand names and product names that work as brand names, such as a hero product people search by its own name), a Google Ads operations reserve for changes, and a kill switch. It is re-read on every check, and no tool can edit it.
 
 ```sh
 npx perfoads-mcp@<version> policy check   # is it valid, and what does it allow?

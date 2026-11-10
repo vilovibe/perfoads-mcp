@@ -39,6 +39,11 @@ import { num } from "./metrics.js";
 import type { CampaignNode } from "./nodes/CampaignNode.js";
 import type { ProductFeed, ProductNode } from "./nodes/ProductNode.js";
 
+/** Google asks for colour and size on clothing only: the "Apparel & Accessories" category branch (the app's feedNicheApplicability). */
+export function isApparelCategory(category: string | null | undefined): boolean {
+  return (category ?? "").trim().toLowerCase().startsWith("apparel & accessories");
+}
+
 /** Row limits come from the caller (`caps`): products, shoppingProductsData, shoppingCartData, mcPriceInsights. */
 const atLimit = (ctx: BuildCtx, key: string, rows: number): boolean => {
   const cap = ctx.capOf(key);
@@ -208,9 +213,19 @@ export function buildProductUniverse(ctx: BuildCtx, parentId: string): ProductUn
     const labels = row
       ? [0, 1, 2, 3, 4].map((i) => str(firstOf(rows, `custom_label_${i}`)))
       : [null, null, null, null, null];
+    const blank = (f: string): boolean => !row || row[f] == null || row[f] === "";
     const missing: string[] = [];
-    for (const f of ["gtin", "color", "size"] as const)
-      if (!row || row[f] == null || row[f] === "") missing.push(f);
+    // app twin (M15 fix round 2): a GTIN is missing only when the product has no MPN either and the
+    // store did not set identifier_exists to "no" (handmade / own make); colour and size are asked
+    // of clothing only (Google category "Apparel & Accessories", as the app's gender / age group)
+    const noIdentifier =
+      bool(row?.identifier_exists) === false ||
+      String(row?.identifier_exists ?? "")
+        .trim()
+        .toLowerCase() === "no";
+    if (blank("gtin") && blank("mpn") && !noIdentifier) missing.push("gtin");
+    if (isApparelCategory(str(row?.google_product_category)))
+      for (const f of ["color", "size"] as const) if (blank(f)) missing.push(f);
     const pr = priceById.get(id) ?? null;
     const cr = cartById.get(id) ?? cartById.get(suffix) ?? null;
     const cur = pr ? num(pr.current_price_micros) : null;

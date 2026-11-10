@@ -421,7 +421,7 @@ describe("negatives safety (through the engine)", () => {
         )
       ).message;
     // "qx" PHRASE would block the brand search "qx us" itself.
-    for (const text of ["h&m jeans", "h and m", "3m tape", "lg tv", "lgs", "qx us belts", "qx"]) {
+    for (const text of ["h&m jeans", "h and m", "3m tape", "lg tv", "lgs", "qx us mugs", "qx"]) {
       expect(await refused(text), text).toContain("names your brand");
     }
     // Not the brand: the short words alone or inside other words.

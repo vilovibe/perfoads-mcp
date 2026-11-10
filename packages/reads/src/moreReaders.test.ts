@@ -1168,7 +1168,7 @@ describe("internal readers (snapshot only)", () => {
   });
 
   it("landing pages, snapshot only: clicks per final URL per campaign (PMax pages have no ad id)", async () => {
-    const page = "https://example.de/collections/belts";
+    const page = "https://example.de/collections/mugs";
     const { search, queries } = fakeSearch({
       landing_page_view: (q) =>
         q.includes("campaign.id")

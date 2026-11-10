@@ -2903,6 +2903,8 @@ const CHECK_CONFOUNDERS: Record<string, Entry[]> = {
   AS12: ["AS01", "PX02"],
   // plan 5.2: who made the changes is read off a capped feed, and auto-apply changes have no human author
   AS13: ["AS11", "AS04"],
+  // M18: a capped feed (AS11) makes the monthly count a sample
+  AS24: ["AS11"],
   // R3.6c: the Google-made change list is read off the same capped feed
   AS14: ["AS11"],
   // R3.8: fragmentation is read off conversion counts, which mean nothing if tracking is silent
@@ -3016,6 +3018,9 @@ const CHECK_CONFOUNDERS: Record<string, Entry[]> = {
   SH18: ["SH15", "SH01", "MI01", "MI04"],
   SH19: ["SH15", "SH01", "PX05"],
   SH20: ["SH15", "SH01", "PX05"],
+  SH27: ["SH15"],
+  SH28: ["SH15"],
+  SH29: ["SH15"],
   // B.7
   SL01: ["BB09", "MI01"],
   SL02: ["AS09"],

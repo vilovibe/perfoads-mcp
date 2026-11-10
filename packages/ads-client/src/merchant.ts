@@ -40,7 +40,7 @@ export interface MerchantProduct {
   feedLabel: string;
   /** customLabel0..4 as Google shows them now (every source together); null = none. */
   labels: (string | null)[];
-  /** "Belts > Women" -> ["belts", "women"] (lowercase, first product type). */
+  /** "Mugs > Women" -> ["mugs", "women"] (lowercase, first product type). */
   types: string[];
   /** lowercase brand; null = none. */
   brand: string | null;

@@ -2,7 +2,7 @@
 // Copyright 2026 Paweł Wilk
 
 // (product waste): a capped product read that does not lose rows to the per-query
-// limit. Port of the PerfoAds app's splitProductRead (pmaxProductPerfPure.ts). A read that
+// limit. Port of the PerfoAds app's splitProductRead. A read that
 // fills its limit is thrown away and read again as two halves of its days, down to one day;
 // a full single day with 2+ campaigns is read again one campaign at a time. Every kept read
 // covers its own days (and campaign), so summing the rows per (campaign, item) never counts

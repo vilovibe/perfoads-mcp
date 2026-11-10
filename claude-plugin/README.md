@@ -1,6 +1,6 @@
 # PerfoAds
 
-PerfoAds MCP lets Claude read your Google Ads accounts, run 162 deterministic account checks that say what is wrong (with the evidence and the money at stake), and make changes only after you approve each one on a local page, within spend limits you set, with undo.
+PerfoAds MCP lets Claude read your Google Ads accounts, run 168 deterministic account checks that say what is wrong (with the evidence and the money at stake), and make changes only after you approve each one on a local page, within spend limits you set, with undo.
 
 PerfoAds MCP works with Google Ads. It is not made, endorsed or supported by Google. Google Ads is a trademark of Google LLC.
 

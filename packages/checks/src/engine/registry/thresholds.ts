@@ -232,6 +232,19 @@ export const EXTENSION_MINIMUMS: Readonly<Record<string, number>> = {
   CALL: 1,
 } as const;
 
+/**
+ * M18 (gaps J33): the Search bar. A Search campaign shows up to 4 sitelinks
+ * and 4 callouts at once, so it needs 8-12 sitelinks and 10-12 callouts for Google
+ * to rotate and learn. SK16 tests Search campaigns against `min`. Other campaign
+ * types keep EXTENSION_MINIMUMS.
+ */
+export const SEARCH_EXTENSION_BAR: Readonly<
+  Record<"SITELINK" | "CALLOUT", { min: number; max: number }>
+> = {
+  SITELINK: { min: 8, max: 12 },
+  CALLOUT: { min: 10, max: 12 },
+} as const;
+
 /** The whole table, for printing / tests. */
 export const THRESHOLDS = {
   WASTE,

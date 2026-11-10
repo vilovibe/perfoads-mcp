@@ -27,6 +27,7 @@ import {
   targetSentence,
 } from "./clientContextGate.js";
 import { brandMatcherOfModel } from "../model/context.js";
+import { brandCpcBand } from "../shared/brandCpcBand.js";
 import type { CampaignNode } from "../model/nodes/CampaignNode.js";
 import {
   campaignsOf,
@@ -428,6 +429,24 @@ function targetMet90(
   return null;
 }
 
+/**
+ * The one target rule, in words (as the app's BB04 / BB06): a cost-per-sale target from
+ * about settings.bidding.targetCpaMinConv30d sales a month, a sales-value target from about
+ * settings.bidding.targetRoasMinConv30d.
+ */
+function targetBarWords(ctx: CheckCtx, valueTarget: boolean): string {
+  const cpa = ctx.settings.bidding.targetCpaMinConv30d;
+  const value = ctx.settings.bidding.targetRoasMinConv30d;
+  return valueTarget
+    ? `about ${value} sales a month for a sales-value target (about ${cpa} for a cost-per-sale target)`
+    : `about ${cpa} sales a month for a cost-per-sale target (about ${value} for a sales-value target)`;
+}
+
+/** The 30-day sales of a finding, rounded for a sentence; null = not stated. */
+function salesWords(v: number | null): string | null {
+  return v != null && Number.isFinite(v) ? String(Math.round(v * 10) / 10) : null;
+}
+
 /** BB04 — a bid target set ahead of the conversion volume that supports it. */
 export const bb04 = defineCheck({
   id: "BB04",
@@ -461,6 +480,7 @@ export const bb04 = defineCheck({
           ? ctx.settings.bidding.targetRoasMinConv30d
           : ctx.settings.bidding.targetCpaMinConv30d;
       const met = targetMet90(c, num(tRoas), num(tCpa), bar);
+      const had = salesWords(windowField(w30, "conv"));
       const f = finding({
         claimKey: "bidding.ahead_of_data",
         scope: scopeOf(c),
@@ -475,11 +495,10 @@ export const bb04 = defineCheck({
           conv_bar_30d: bar,
           ...(met ? { result_90d: met.result, target_met_90d: true, conv_90d: met.conv } : {}),
         },
-        ...(met
-          ? {
-              note: `the campaign's last 90 days meet its target (${met.words}), so the data supports the target so far; only the last 30 days' sales are under the guideline of ${bar}`,
-            }
-          : {}),
+        // the warning says Google may hold back spend, never that the target is wrong
+        note: met
+          ? `the campaign's last 90 days meet its target (${met.words}), so the data supports the target so far; only the last 30 days' sales are under the guideline of ${bar}`
+          : `Google may hold back spend until ${targetBarWords(ctx, num(tRoas) != null)}${had != null ? `, and this campaign had about ${had} in the last 30 days` : ""}`,
       });
       if (met) f.maxSeverity = "info";
       findings.push(f);
@@ -607,6 +626,11 @@ export const bb06 = defineCheck({
       if (v !== "ready_for_target") continue;
       const w30 = ctx.get("C.window(w)", { campaignId: c.id, window: "30d" });
       const strategy = ctx.get("C.strategy", { campaignId: c.id });
+      const s = String(str(strategy) ?? "").toUpperCase();
+      const valueBidding = s.includes("CONVERSION_VALUE") || s.includes("TARGET_ROAS");
+      const cpaBidding = s.includes("TARGET_CPA") || s === "MAXIMIZE_CONVERSIONS";
+      const had = salesWords(windowField(w30, "conv"));
+      const sales = had != null ? `, and this campaign had about ${had} in the last 30 days` : "";
       findings.push(
         finding({
           claimKey: "bidding.ready_for_target",
@@ -617,7 +641,17 @@ export const bb06 = defineCheck({
             conv_30d: windowField(w30, "conv"),
             strategy: str(strategy),
             is_brand: c.attrs.isBrand,
+            // the bar the ladder used: the target it would get, or Google's value-bidding minimum
+            conv_bar_30d: valueBidding
+              ? ctx.settings.bidding.targetRoasMinConv30d
+              : cpaBidding
+                ? ctx.settings.bidding.targetCpaMinConv30d
+                : ctx.settings.bidding.valueBiddingMinConv30d,
           },
+          note:
+            valueBidding || cpaBidding
+              ? `a target needs ${targetBarWords(ctx, valueBidding)}${sales}`
+              : `moving to value bidding with no target needs about ${ctx.settings.bidding.valueBiddingMinConv30d} sales a month (Google's own minimum), and a target after that ${targetBarWords(ctx, true)}${sales}`,
         }),
       );
     }
@@ -1212,7 +1246,7 @@ function effectiveBidding(
  * (validate-only: biddingError NOT_ENOUGH_CONVERSIONS); its guidance runs from
  * about 15 (Search / Shopping) to 30-50 (Demand Gen) in 30 days. So the
  * campaign's OWN last-30-day conversions must reach
- * `settings.bidding.targetRoasMinConv30d` (the same minimum the update_bidding
+ * `settings.bidding.valueBiddingMinConv30d` (the same minimum the update_bidding
  * change refuses the switch under: @perfoads/changes VALUE_BIDDING_MIN_CONV_30D).
  * Under it: a Note-level finding of its own (maxSeverity info, fact
  * `below_value_minimum: "yes"`) that says to keep the current bidding until the
@@ -1238,7 +1272,7 @@ export const bb14 = defineCheck({
     const findings: CheckFinding[] = [];
     let population = 0;
     let noValueColumn = 0;
-    const minConv30 = ctx.settings.bidding.targetRoasMinConv30d;
+    const minConv30 = ctx.settings.bidding.valueBiddingMinConv30d;
     let no30 = 0;
     for (const c of campaigns(ctx)) {
       const strategy = ctx.get("C.strategy", { campaignId: c.id });
@@ -1402,10 +1436,14 @@ export const bb15 = defineCheck({
         reason: `non-brand Search / Shopping / Performance Max clicks ${nbClicks} under the ${NON_BRAND_CPC_MIN_CLICKS}-click floor for a reference CPC`,
       };
     const nonBrandCpc = nbCost / nbClicks;
-    const bar = Math.max(
-      scaleMoney(BRAND_CPC_FLOOR_USD, ctx.currency),
-      BRAND_CPC_SHARE_OF_NON_BRAND * nonBrandCpc,
-    );
+    // the shared band helper (app twin brandCpcBand.ts); same numbers as before the move
+    const band = brandCpcBand({
+      nonBrandCpc,
+      currency: ctx.currency,
+      floorUsd: BRAND_CPC_FLOOR_USD,
+      share: BRAND_CPC_SHARE_OF_NON_BRAND,
+    });
+    const bar = band.bar;
     const noteBelow = scaleMoney(BRAND_CPC_NOTE_BELOW_MONTHLY_USD, ctx.currency);
     const isBrandTerm = brandMatcherOfModel(ctx.model);
 
@@ -1474,7 +1512,7 @@ export const bb15 = defineCheck({
             target_cpa: c.attrs.targetCpa,
             broad_brand_keywords: broad,
           },
-          note: `the usual brand click price = the larger of ${scaleMoney(BRAND_CPC_FLOOR_USD, ctx.currency).toFixed(2)} and ${BRAND_CPC_SHARE_OF_NON_BRAND * 100}% of the non-brand CPC; a rule of thumb, so the spend above it is money at risk, not waste`,
+          note: `the usual brand click price = the larger of ${band.floor.toFixed(2)} and ${band.share * 100}% of the non-brand CPC; a rule of thumb, so the spend above it is money at risk, not waste`,
         }),
         // a rule-of-thumb bar: its money can rank the finding, never make it critical
         maxSeverity: "warning",
