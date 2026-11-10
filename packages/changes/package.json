@@ -1,6 +1,6 @@
 {
   "name": "@perfoads/changes",
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0-alpha.2",
   "description": "Change engine for the PerfoAds MCP server (works with Google Ads): propose, check with Google, approve, apply once, read back, log and undo.",
   "keywords": [
     "google-ads",

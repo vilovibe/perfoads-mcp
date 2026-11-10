@@ -1,6 +1,6 @@
 {
   "name": "@perfoads/checks",
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0-alpha.2",
   "description": "Deterministic Google Ads account checks: no network, no AI, same input same output.",
   "keywords": [
     "google-ads",

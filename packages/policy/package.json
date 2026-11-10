@@ -1,6 +1,6 @@
 {
   "name": "@perfoads/policy",
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0-alpha.2",
   "description": "Change policy (policy.yaml) for the PerfoAds MCP server (works with Google Ads): which accounts may be written, spend limits, tiers, ops reserve and a kill switch.",
   "keywords": [
     "google-ads",

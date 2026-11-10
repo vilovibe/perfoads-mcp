@@ -1,6 +1,6 @@
 {
   "name": "@perfoads/store",
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0-alpha.2",
   "description": "Local SQLite store with encrypted credentials for the PerfoAds MCP server (works with Google Ads).",
   "keywords": [
     "sqlite",

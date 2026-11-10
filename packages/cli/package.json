@@ -1,6 +1,6 @@
 {
   "name": "perfoads-mcp",
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0-alpha.2",
   "mcpName": "com.perfoads/mcp",
   "description": "PerfoAds MCP: a self-hosted MCP server that works with Google Ads. Reads accounts, runs 100+ account checks, and changes things only with human approval and policy limits. Not a Google product.",
   "keywords": [

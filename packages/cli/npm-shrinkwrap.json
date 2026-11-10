@@ -1,19 +1,19 @@
 {
   "name": "perfoads-mcp",
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0-alpha.2",
   "lockfileVersion": 3,
   "requires": true,
   "packages": {
     "": {
       "name": "perfoads-mcp",
-      "version": "0.2.0-alpha.0",
+      "version": "0.2.0-alpha.2",
       "license": "Apache-2.0",
       "dependencies": {
-        "@perfoads/ads-client": "0.2.0-alpha.0",
-        "@perfoads/changes": "0.2.0-alpha.0",
-        "@perfoads/mcp-server": "0.2.0-alpha.0",
-        "@perfoads/policy": "0.2.0-alpha.0",
-        "@perfoads/store": "0.2.0-alpha.0"
+        "@perfoads/ads-client": "0.2.0-alpha.2",
+        "@perfoads/changes": "0.2.0-alpha.2",
+        "@perfoads/mcp-server": "0.2.0-alpha.2",
+        "@perfoads/policy": "0.2.0-alpha.2",
+        "@perfoads/store": "0.2.0-alpha.2"
       },
       "bin": {
         "perfoads-mcp": "./bin/perfoads-mcp.js"
@@ -46,20 +46,20 @@
       }
     },
     "node_modules/@perfoads/ads-client": {
-      "version": "0.2.0-alpha.0",
-      "resolved": "https://registry.npmjs.org/@perfoads/ads-client/-/ads-client-0.2.0-alpha.0.tgz",
+      "version": "0.2.0-alpha.2",
+      "resolved": "https://registry.npmjs.org/@perfoads/ads-client/-/ads-client-0.2.0-alpha.2.tgz",
       "license": "Apache-2.0",
       "engines": {
         "node": ">=22.13"
       }
     },
     "node_modules/@perfoads/changes": {
-      "version": "0.2.0-alpha.0",
-      "resolved": "https://registry.npmjs.org/@perfoads/changes/-/changes-0.2.0-alpha.0.tgz",
+      "version": "0.2.0-alpha.2",
+      "resolved": "https://registry.npmjs.org/@perfoads/changes/-/changes-0.2.0-alpha.2.tgz",
       "license": "Apache-2.0",
       "dependencies": {
-        "@perfoads/ads-client": "0.2.0-alpha.0",
-        "@perfoads/store": "0.2.0-alpha.0",
+        "@perfoads/ads-client": "0.2.0-alpha.2",
+        "@perfoads/store": "0.2.0-alpha.2",
         "zod": "4.6.7"
       },
       "engines": {
@@ -67,26 +67,26 @@
       }
     },
     "node_modules/@perfoads/checks": {
-      "version": "0.2.0-alpha.0",
-      "resolved": "https://registry.npmjs.org/@perfoads/checks/-/checks-0.2.0-alpha.0.tgz",
+      "version": "0.2.0-alpha.2",
+      "resolved": "https://registry.npmjs.org/@perfoads/checks/-/checks-0.2.0-alpha.2.tgz",
       "license": "Apache-2.0",
       "engines": {
         "node": ">=22.13"
       }
     },
     "node_modules/@perfoads/mcp-server": {
-      "version": "0.2.0-alpha.0",
-      "resolved": "https://registry.npmjs.org/@perfoads/mcp-server/-/mcp-server-0.2.0-alpha.0.tgz",
+      "version": "0.2.0-alpha.2",
+      "resolved": "https://registry.npmjs.org/@perfoads/mcp-server/-/mcp-server-0.2.0-alpha.2.tgz",
       "license": "Apache-2.0",
       "dependencies": {
         "@modelcontextprotocol/server": "2.4.0",
-        "@perfoads/ads-client": "0.2.0-alpha.0",
-        "@perfoads/changes": "0.2.0-alpha.0",
-        "@perfoads/checks": "0.2.0-alpha.0",
-        "@perfoads/policy": "0.2.0-alpha.0",
-        "@perfoads/reads": "0.2.0-alpha.0",
-        "@perfoads/snapshot": "0.2.0-alpha.0",
-        "@perfoads/store": "0.2.0-alpha.0",
+        "@perfoads/ads-client": "0.2.0-alpha.2",
+        "@perfoads/changes": "0.2.0-alpha.2",
+        "@perfoads/checks": "0.2.0-alpha.2",
+        "@perfoads/policy": "0.2.0-alpha.2",
+        "@perfoads/reads": "0.2.0-alpha.2",
+        "@perfoads/snapshot": "0.2.0-alpha.2",
+        "@perfoads/store": "0.2.0-alpha.2",
         "zod": "4.6.7"
       },
       "engines": {
@@ -94,13 +94,13 @@
       }
     },
     "node_modules/@perfoads/policy": {
-      "version": "0.2.0-alpha.0",
-      "resolved": "https://registry.npmjs.org/@perfoads/policy/-/policy-0.2.0-alpha.0.tgz",
+      "version": "0.2.0-alpha.2",
+      "resolved": "https://registry.npmjs.org/@perfoads/policy/-/policy-0.2.0-alpha.2.tgz",
       "license": "Apache-2.0",
       "dependencies": {
-        "@perfoads/ads-client": "0.2.0-alpha.0",
-        "@perfoads/changes": "0.2.0-alpha.0",
-        "@perfoads/store": "0.2.0-alpha.0",
+        "@perfoads/ads-client": "0.2.0-alpha.2",
+        "@perfoads/changes": "0.2.0-alpha.2",
+        "@perfoads/store": "0.2.0-alpha.2",
         "yaml": "2.9.1",
         "zod": "4.6.7"
       },
@@ -109,11 +109,11 @@
       }
     },
     "node_modules/@perfoads/reads": {
-      "version": "0.2.0-alpha.0",
-      "resolved": "https://registry.npmjs.org/@perfoads/reads/-/reads-0.2.0-alpha.0.tgz",
+      "version": "0.2.0-alpha.2",
+      "resolved": "https://registry.npmjs.org/@perfoads/reads/-/reads-0.2.0-alpha.2.tgz",
       "license": "Apache-2.0",
       "dependencies": {
-        "@perfoads/ads-client": "0.2.0-alpha.0",
+        "@perfoads/ads-client": "0.2.0-alpha.2",
         "zod": "4.6.7"
       },
       "engines": {
@@ -121,12 +121,12 @@
       }
     },
     "node_modules/@perfoads/snapshot": {
-      "version": "0.2.0-alpha.0",
-      "resolved": "https://registry.npmjs.org/@perfoads/snapshot/-/snapshot-0.2.0-alpha.0.tgz",
+      "version": "0.2.0-alpha.2",
+      "resolved": "https://registry.npmjs.org/@perfoads/snapshot/-/snapshot-0.2.0-alpha.2.tgz",
       "license": "Apache-2.0",
       "dependencies": {
-        "@perfoads/checks": "0.2.0-alpha.0",
-        "@perfoads/reads": "0.2.0-alpha.0",
+        "@perfoads/checks": "0.2.0-alpha.2",
+        "@perfoads/reads": "0.2.0-alpha.2",
         "zod": "4.6.7"
       },
       "engines": {
@@ -134,8 +134,8 @@
       }
     },
     "node_modules/@perfoads/store": {
-      "version": "0.2.0-alpha.0",
-      "resolved": "https://registry.npmjs.org/@perfoads/store/-/store-0.2.0-alpha.0.tgz",
+      "version": "0.2.0-alpha.2",
+      "resolved": "https://registry.npmjs.org/@perfoads/store/-/store-0.2.0-alpha.2.tgz",
       "license": "Apache-2.0",
       "engines": {
         "node": ">=22.13"

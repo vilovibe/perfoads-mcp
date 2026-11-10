@@ -1,6 +1,6 @@
 {
   "name": "@perfoads/mcp-server",
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0-alpha.2",
   "description": "PerfoAds MCP server (stdio), works with the Google Ads API: account, read, check and change tools with human approval.",
   "keywords": [
     "google-ads",

@@ -1,6 +1,6 @@
 {
   "name": "@perfoads/ads-client",
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0-alpha.2",
   "description": "Google Ads API REST client used by the PerfoAds MCP server.",
   "keywords": [
     "google-ads",

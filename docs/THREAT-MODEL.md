@@ -1,6 +1,6 @@
 # Threat model
 
-What the server protects, against whom, how, and where the protection ends. Version 0.2.0-alpha.0.
+What the server protects, against whom, how, and where the protection ends. Version 0.2.0-alpha.2.
 
 **Assets:** your Google Ads accounts (money: budgets, bids, what runs), your Google sign-in (OAuth client secret and refresh token), account data (names, search terms, conversions), and the honesty of the record (what was changed, by whom, approved how).
 

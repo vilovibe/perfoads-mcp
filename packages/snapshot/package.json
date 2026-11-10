@@ -1,6 +1,6 @@
 {
   "name": "@perfoads/snapshot",
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0-alpha.2",
   "description": "Versioned AccountSnapshot of one Google Ads account, and its adapter to the PerfoAds check engine.",
   "keywords": [
     "google-ads",

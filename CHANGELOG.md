@@ -2,9 +2,9 @@
 
 All notable changes to this project. Versions follow semver; all packages are released together.
 
-## Unreleased
+## 0.2.0-alpha.2 (2026-11-10)
 
-Not on npm yet. 168 checks.
+168 checks.
 
 ### Added
 

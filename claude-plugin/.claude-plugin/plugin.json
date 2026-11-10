@@ -1,7 +1,7 @@
 {
   "name": "perfoads",
   "displayName": "PerfoAds",
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0-alpha.2",
   "description": "PerfoAds MCP: let Claude check your Google Ads accounts (168 checks) and change them only after you approve, within spend limits, with undo. Self-hosted; works with Google Ads.",
   "author": {
     "name": "PerfoAds (Paweł Wilk)",
@@ -19,7 +19,7 @@
   "mcpServers": {
     "perfoads-mcp": {
       "command": "npx",
-      "args": ["-y", "perfoads-mcp@0.2.0-alpha.0", "serve"]
+      "args": ["-y", "perfoads-mcp@0.2.0-alpha.2", "serve"]
     }
   }
 }

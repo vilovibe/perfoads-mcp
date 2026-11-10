@@ -1,6 +1,6 @@
 {
   "name": "@perfoads/reads",
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0-alpha.2",
   "description": "Typed Google Ads readers (campaigns, keywords, search terms, budgets, negatives, ads, audiences, conversions, change history, ...) for the PerfoAds MCP server.",
   "keywords": [
     "google-ads",

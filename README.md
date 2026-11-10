@@ -6,7 +6,7 @@ A self-hosted MCP server that works with Google Ads. It lets an AI assistant (Cl
 
 PerfoAds MCP works with Google Ads. It is not made, endorsed or supported by Google (not a Google product). It works with the Google Ads API through **your own** Google Cloud project and your own sign-in; nothing goes through anyone else's servers.
 
-Package and CLI: `perfoads-mcp`. License: Apache-2.0. Status: early alpha. On npm: [`perfoads-mcp`](https://www.npmjs.com/package/perfoads-mcp) (`0.2.0-alpha.1`).
+Package and CLI: `perfoads-mcp`. License: Apache-2.0. Status: early alpha. On npm: [`perfoads-mcp`](https://www.npmjs.com/package/perfoads-mcp) (`0.2.0-alpha.2`).
 
 ## Work with Paweł
 
@@ -39,10 +39,10 @@ Step by step: [docs/SETUP.md](docs/SETUP.md).
 ## Install and connect
 
 ```sh
-npx perfoads-mcp@0.2.0-alpha.1 init
+npx perfoads-mcp@0.2.0-alpha.2 init
 ```
 
-Always name the exact version (`@0.2.0-alpha.1`, not `@latest` or none), so npm can't hand you a different release. `init` asks for your OAuth client id and secret, opens Google's sign-in in your browser, saves the sign-in encrypted, writes a read-only starter policy, runs `doctor`, and prints the config for your AI app.
+Always name the exact version (`@0.2.0-alpha.2`, not `@latest` or none), so npm can't hand you a different release. `init` asks for your OAuth client id and secret, opens Google's sign-in in your browser, saves the sign-in encrypted, writes a read-only starter policy, runs `doctor`, and prints the config for your AI app.
 
 Or build from source:
 

@@ -8,13 +8,13 @@
     "url": "https://github.com/vilovibe/perfoads-mcp",
     "source": "github"
   },
-  "version": "0.2.0-alpha.0",
+  "version": "0.2.0-alpha.2",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "perfoads-mcp",
-      "version": "0.2.0-alpha.0",
+      "version": "0.2.0-alpha.2",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
